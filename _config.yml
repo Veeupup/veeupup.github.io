@@ -103,6 +103,6 @@ theme: fluid
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: git
-  repo: git@github.com:Veeupup/v_blog
+  repo: git@github.com:Veeupup/veeupup.github.io
   branch: gh-pages
 
