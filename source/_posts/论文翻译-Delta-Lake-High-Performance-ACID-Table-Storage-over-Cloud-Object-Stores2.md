@@ -4,9 +4,9 @@ title: >-
   Stores2
 date: 2021-11-17 23:24:05
 categories:
-- 数据仓库
-tags:
 - 论文翻译
+tags:
+- 数据仓库
 ---
 
 # Delta lake
