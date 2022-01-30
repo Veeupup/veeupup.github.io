@@ -16,20 +16,20 @@
   <meta name="author" content="tanwei">
   <meta name="keywords" content="">
   
-    <meta name="description" content="对 C++、Rust 感兴趣 对分布式系统和数据库感兴趣 努力学习成为一个合格的软件工程师…  contact me at &amp;#99;&amp;#111;&amp;#100;&amp;#101;&amp;#64;&amp;#x74;&amp;#97;&amp;#x6e;&amp;#x77;&amp;#101;&amp;#x69;&amp;#x6d;&amp;#101;&amp;#x2e;&amp;#x63;&amp;#x6f;&amp;#109;">
-<meta property="og:type" content="website">
-<meta property="og:title" content="about">
-<meta property="og:url" content="http://tanweime.com/about/index.html">
+    <meta name="description" content="2022 的第二个周报，明年就过年了，主题是焦虑… 工作这周做的工作如下面几个 PR  impl getData trait for boolean&#x2F;string column &amp; improve column 这个 closed 掉的 PR 是开始对重构 datavalues 的一些尝试工作，本来以后就给 bool 和 string 类型加上两个 trait 那么简单，结果后来因为代码结">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2022-02 焦虑">
+<meta property="og:url" content="http://tanweime.com/2022/01/30/2022-02-%E7%84%A6%E8%99%91%E7%9A%84%E4%B8%A4%E5%91%A8/index.html">
 <meta property="og:site_name" content="TanWei&#39;s blog">
-<meta property="og:description" content="对 C++、Rust 感兴趣 对分布式系统和数据库感兴趣 努力学习成为一个合格的软件工程师…  contact me at &amp;#99;&amp;#111;&amp;#100;&amp;#101;&amp;#64;&amp;#x74;&amp;#97;&amp;#x6e;&amp;#x77;&amp;#101;&amp;#x69;&amp;#x6d;&amp;#101;&amp;#x2e;&amp;#x63;&amp;#x6f;&amp;#109;">
+<meta property="og:description" content="2022 的第二个周报，明年就过年了，主题是焦虑… 工作这周做的工作如下面几个 PR  impl getData trait for boolean&#x2F;string column &amp; improve column 这个 closed 掉的 PR 是开始对重构 datavalues 的一些尝试工作，本来以后就给 bool 和 string 类型加上两个 trait 那么简单，结果后来因为代码结">
 <meta property="og:locale">
-<meta property="article:published_time" content="2021-10-25T11:43:19.000Z">
-<meta property="article:modified_time" content="2021-12-29T03:03:36.052Z">
+<meta property="article:published_time" content="2022-01-30T15:48:55.000Z">
+<meta property="article:modified_time" content="2022-01-30T15:51:12.288Z">
 <meta property="article:author" content="tanwei">
 <meta name="twitter:card" content="summary_large_image">
   
   
-  <title>about - TanWei&#39;s blog</title>
+  <title>2022-02 焦虑 - TanWei&#39;s blog</title>
 
   <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
 
@@ -74,7 +74,7 @@
 
 
 <body>
-  <header style="height: 60vh;">
+  <header style="height: 70vh;">
     <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
@@ -175,9 +175,43 @@
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
           <div class="page-header text-center fade-in-up">
-            <span class="h2" id="subtitle" title="about">
+            <span class="h2" id="subtitle" title="2022-02 焦虑">
               
             </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2022-01-30 23:48" pubdate>
+        January 30, 2022 pm
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      964 字
+    </span>
+  
+
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      4 分钟
+    </span>
+  
+
+  
+  
+</div>
 
             
           </div>
@@ -190,32 +224,111 @@
 
   <main>
     
-      <div class="container nopadding-x-md">
-        <div class="py-5" id="board"
-          >
-          
-          <div class="container">
-            <div class="row">
-              <div class="col-12 col-md-10 m-auto">
-                
+      
 
-<article class="page-content">
-  <ul>
-<li>对 C++、Rust 感兴趣</li>
-<li>对分布式系统和数据库感兴趣</li>
-<li>努力学习成为一个合格的软件工程师…</li>
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">2022-02 焦虑</h1>
+            
+            <div class="markdown-body">
+              <p>2022 的第二个周报，明年就过年了，主题是焦虑…</p>
+<h1 id="工作"><a href="#工作" class="headerlink" title="工作"></a>工作</h1><p>这周做的工作如下面几个 PR</p>
+<ul>
+<li><p><a target="_blank" rel="noopener" href="https://github.com/datafuselabs/databend/pull/3912">impl <code>getData</code> trait for boolean/string column &amp; improve column</a> 这个 closed 掉的 PR 是开始对重构 datavalues 的一些尝试工作，本来以后就给 bool 和 string 类型加上两个 trait 那么简单，结果后来因为代码结构，依赖关系，生命周期等一些问题发现这条路行不通了…正好 cxs 开源的 <a target="_blank" rel="noopener" href="https://github.com/skyzh/type-exercise-in-rust">https://github.com/skyzh/type-exercise-in-rust</a> 写得确实很漂亮的代码把 type 解耦得非常好，然后 sundy 哥重改思路很快就写出来一版（太强了，啥时候我也能又快又好的写出正确、高效还解耦清晰的代码 😭）</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://github.com/datafuselabs/databend/pull/3988">datavalues2: conditional function: if</a> 重写条件变量表达式 if <code>if(a, b, c)</code> ，确实新版的类型系统的加持下能够对 nullable 和 non-nullable 的 column 都能够写出比较漂亮的代码</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/datafuselabs/databend/pull/3992">use aggregate_type to merge type</a>   improve if</li>
 </ul>
-<p>contact me at <a href="mailto:&#99;&#111;&#100;&#101;&#64;&#x74;&#97;&#x6e;&#x77;&#101;&#x69;&#x6d;&#101;&#x2e;&#x63;&#x6f;&#109;">&#99;&#111;&#100;&#101;&#64;&#x74;&#97;&#x6e;&#x77;&#101;&#x69;&#x6d;&#101;&#x2e;&#x63;&#x6f;&#109;</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://github.com/datafuselabs/databend/pull/3998">datavalues2: Logic function</a> 重写 sql logic function（and,or,xor,not），采用宏静态分发的代码实在写的很舒服</p>
+</li>
+</ul>
+<p>其他：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/datafuselabs/databend/pull/3965">impl Debug trait for Column</a> 给 column 加上 debug 信息</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/datafuselabs/databend/pull/4008">fix if with null &amp; fix convert to nullable column bug</a>  </li>
+</ul>
+<p>这周工作上的内容还比较充实，但是感觉 cxs, sundy 哥太强了，还有很多需要学习的地方，设计出一个好的数据库中的内存数据表示方式确实是一个很难的事情，同时还要注意兼顾SIMD的向量化计算等优化。</p>
+<p>加油！</p>
+<h1 id="学习"><a href="#学习" class="headerlink" title="学习"></a>学习</h1><ul>
+<li><p>这周很焦虑，继续在坚持做算法题，感觉自己不能停止思考，算法题确实是一个活跃思维的很好的方式，虽然都是小点，希望能够继续坚持下去</p>
+</li>
+<li><p>但是自己并没有继续做6.s081，上周的 flag 倒了一个，TAT，下周要捡起来</p>
+</li>
+</ul>
+<h1 id="个人"><a href="#个人" class="headerlink" title="个人"></a>个人</h1><p>科三挂了，得重新来过，很难受，因为又得耽误好几天时间</p>
+<p>滑雪因为各种原因没去成…</p>
+<p>都快23岁了啊…，得更努力了，要向大佬们看齐，一步一个脚印冲</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>焦虑，感觉自己想要学习的东西太多了…希望下周周期心态能够变得更好一点，fighting！</p>
 
-
-  
-</article>
-
-              </div>
             </div>
-          </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/%E5%91%A8%E6%8A%A5/">周报</a>
+                    
+                  </div>
+                
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/01/16/2022-01-%E5%8F%8C%E5%91%A8%E6%8A%A5%E5%B0%9D%E8%AF%95/">
+                        <span class="hidden-mobile">2022-01 双周报尝试&回家</span>
+                        <span class="visible-mobile">Nächster</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
         </div>
       </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;TOC</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
     
 
     
