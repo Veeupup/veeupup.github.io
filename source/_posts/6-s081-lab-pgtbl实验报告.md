@@ -1,9 +1,13 @@
 ---
 title: 6.s081-lab pgtbl实验报告
 date: 2022-03-21 20:13:49
-tags:
+categories:
 - 6.s081
 ---
+
+最近因为有些事情，好久没更新了，这次抽点时间又把后面的 lab 做一下，来记录下笔记便于之后自己复习
+
+<!--more-->
 
 ## Print a page table
 
