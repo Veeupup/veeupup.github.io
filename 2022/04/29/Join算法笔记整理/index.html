@@ -23,24 +23,24 @@
 <meta property="og:site_name" content="TanWei&#39;s blog">
 <meta property="og:description" content="[TOC] Join 算法一个好的数据库的设计应该是尽量减少信息的重复和冗余，通常会将不同的数据放在不同的表中，对数据进行拆解分别存储。为了获取完整的分析数据，我们就需要从多表中取数据，将多个表连接成一个表，方便我们进行分析。 Join 一般分为 Inner Join 和 Outer Join，下面用两张图表示他们的区别   Inner Join 表示的是两个表的交集，   上图是 Left Ou">
 <meta property="og:locale">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429145459031.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429145526956.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429152912102.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429163605582.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429155153602.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429154945524.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429161457053.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429161618742.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429161843754.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429162614451.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429162625551.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429162642489.png">
-<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429163016850.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429145459031.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429145526956.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429152912102.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429163605582.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429155153602.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429154945524.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429161457053.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429161618742.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429161843754.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429162614451.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429162625551.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429162642489.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429163016850.png">
 <meta property="article:published_time" content="2022-04-29T08:46:01.000Z">
-<meta property="article:modified_time" content="2022-04-29T08:47:44.932Z">
+<meta property="article:modified_time" content="2022-04-29T08:51:40.434Z">
 <meta property="article:author" content="tanwei">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/Join算法笔记整理.assets/image-20220429145459031.png">
+<meta name="twitter:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429145459031.png">
   
   
   <title>Join算法笔记整理 - TanWei&#39;s blog</title>
@@ -254,10 +254,10 @@
               <p>[TOC]</p>
 <h1 id="Join-算法"><a href="#Join-算法" class="headerlink" title="Join 算法"></a>Join 算法</h1><p>一个好的数据库的设计应该是<strong>尽量减少信息的重复和冗余</strong>，通常会将不同的数据放在不同的表中，对数据进行拆解分别存储。为了获取完整的分析数据，我们就需要从多表中取数据，将多个表连接成一个表，方便我们进行分析。</p>
 <p>Join 一般分为 Inner Join 和 Outer Join，下面用两张图表示他们的区别</p>
-<img src="Join算法笔记整理.assets/image-20220429145459031.png" srcset="/img/loading.gif" lazyload alt="image-20220429145459031" style="zoom:50%;" />
+<img src="image-20220429145459031.png" srcset="/img/loading.gif" lazyload alt="image-20220429145459031" style="zoom:50%;" />
 
 <p>Inner Join 表示的是两个表的交集，</p>
-<img src="Join算法笔记整理.assets/image-20220429145526956.png" srcset="/img/loading.gif" lazyload alt="image-20220429145526956" style="zoom:50%;" />
+<img src="image-20220429145526956.png" srcset="/img/loading.gif" lazyload alt="image-20220429145526956" style="zoom:50%;" />
 
 <p>上图是 Left Outer Join 表示的是两个表，左边表数据行全部保留，右边表保留符合连接条件的行。</p>
 <h2 id="Join-算子的输出"><a href="#Join-算子的输出" class="headerlink" title="Join 算子的输出"></a>Join 算子的输出</h2><p>对于表 <code>R</code> 和 <code>S</code>  ，通过  Join 算子计算之后，Join 算子只会输出在 join attributes 上符合条件的行并且将两个表中的 tuple 连接起来输出。</p>
@@ -307,7 +307,7 @@
 <h2 id="Sort-Merge-Join"><a href="#Sort-Merge-Join" class="headerlink" title="Sort-Merge Join"></a>Sort-Merge Join</h2><p>简而言之，sort-merge join 就是让两个 table 在他们 join key 上来做一个排序。DBMS 将会使用一些外排序的归并算法来实现，将会移动两个 table 上的指针来计算匹配的 tuple</p>
 <p>这种算法很有用：当一个或者两个表都已经在 join 属性上排好序了或者说输出需要在 join key 上排好序。</p>
 <p>算法的过程：</p>
-<img src="Join算法笔记整理.assets/image-20220429152912102.png" srcset="/img/loading.gif" lazyload alt="image-20220429152912102" style="zoom:50%;" />
+<img src="image-20220429152912102.png" srcset="/img/loading.gif" lazyload alt="image-20220429152912102" style="zoom:50%;" />
 
 <p>最坏的情况就是 join 属性在所有的 tuple 上都有相同的值，但是这是不太可能发生的。在这种情况下，Cost 将会变为 <code>M * N</code>。对于大多数情况来说，这个merge cost 将会大概是 <code>M + N。</code></p>
 <p>假设 DBMS 有 B 块 Buffer 来用来做 Join：</p>
@@ -321,7 +321,7 @@
 <ul>
 <li>2-way external merge sort</li>
 </ul>
-<img src="Join算法笔记整理.assets/image-20220429163605582.png" srcset="/img/loading.gif" lazyload alt="image-20220429163605582" style="zoom:50%;" />
+<img src="image-20220429163605582.png" srcset="/img/loading.gif" lazyload alt="image-20220429163605582" style="zoom:50%;" />
 
 <ul>
 <li>k-way external merge sort</li>
@@ -337,7 +337,7 @@
 <li>Phase 1, Build：首先将扫描外表根据 hash function h<sub>1</sub> 来对 join 属性进行扫描。在 hash表中的key是 join 属性，value 可以是整个 tuple 也可以是 tuple id</li>
 <li>Phase2, Probe: 扫描内部表，同样使用 hash function h<sub>1</sub> 来进行计算来在哈希表中找到匹配的 tuple。因为 hash表中可能有冲突，所以 DBMS 必须检查一下两个 tuple 是否是真的匹配。</li>
 </ul>
-<img src="Join算法笔记整理.assets/image-20220429155153602.png" srcset="/img/loading.gif" lazyload alt="image-20220429155153602" style="zoom:50%;" />
+<img src="image-20220429155153602.png" srcset="/img/loading.gif" lazyload alt="image-20220429155153602" style="zoom:50%;" />
 
 <p>如果 DBMS 知道外表的大小，那么可以使用一个 static hash table，如果不知道外表的大小，那么就可以使用一个 dynamic hash table。</p>
 <p>当然也可以在构建外部表的时候同时构建一个 bloom filter 来加速这个过程，可以快速判断某个值是否存在</p>
@@ -347,7 +347,7 @@
 <li>Phase1, Build: 首先，同时扫描内表和外表，使用 相同的 hash function 来在 join 属性上进行划分， hash table的 bucket 将会被写出到磁盘上。如果一个 bucket 在内存中放不下了，那么DBMS 将会使用 <code>recursive partitioning</code> ，使用一个不同的 hash function 来对 bucket 做进一步的划分，这个过程将会持续进行，知道 bucket 能够让到内存中</li>
 <li>Phase2, Probe: 对于每个 bucket，从 bucket 中会恢复出内表和外表的数据来做一个 nested loop join，因为所有的 page 都能够放置到内存中，所以 join 操作将会非常快</li>
 </ul>
-<img src="Join算法笔记整理.assets/image-20220429154945524.png" srcset="/img/loading.gif" lazyload alt="image-20220429154945524" style="zoom:50%;" />
+<img src="image-20220429154945524.png" srcset="/img/loading.gif" lazyload alt="image-20220429154945524" style="zoom:50%;" />
 
 <p>Cost:</p>
 <ul>
@@ -363,26 +363,26 @@
 <p>要连接表 R 和 S，DBMS 需要在同一节点上拿到合适的 tuple， 需要将合适的 tuple 传输到合适的节点上，一旦这个过程完成，就会通过上面的单机 Join 算法 来进行计算，所以 我们应该始终发送计算 Join 所需的最少数量的 tuple 到某个节点上。</p>
 <p>下面有四种常见的分布式 Join 的算法：</p>
 <h2 id="场景一"><a href="#场景一" class="headerlink" title="场景一"></a>场景一</h2><p>有一张<strong>小表被复制到了每个节点</strong>，但是其他的表在节点间被分区了。每个节点在本地计算 join 的结果然后将结果发送到聚合结果的节点上。</p>
-<img src="Join算法笔记整理.assets/image-20220429161457053.png" srcset="/img/loading.gif" lazyload alt="image-20220429161457053" style="zoom:50%;" />
+<img src="image-20220429161457053.png" srcset="/img/loading.gif" lazyload alt="image-20220429161457053" style="zoom:50%;" />
 
 
 
 <h2 id="场景二"><a href="#场景二" class="headerlink" title="场景二"></a>场景二</h2><p>每个表都被 join 属性分区了，刚好每个节点在本地执行 join 然后将结果发送到聚合结果的节点上</p>
-<img src="Join算法笔记整理.assets/image-20220429161618742.png" srcset="/img/loading.gif" lazyload alt="image-20220429161618742" style="zoom:50%;" />
+<img src="image-20220429161618742.png" srcset="/img/loading.gif" lazyload alt="image-20220429161618742" style="zoom:50%;" />
 
 <h2 id="场景三"><a href="#场景三" class="headerlink" title="场景三"></a>场景三</h2><p>表被不同的属性进行了分区。如果其中某个表更小一点，那么可以将小表 broadcast 到所有的节点上进行计算</p>
-<img src="Join算法笔记整理.assets/image-20220429161843754.png" srcset="/img/loading.gif" lazyload alt="image-20220429161843754" style="zoom:50%;" />
+<img src="image-20220429161843754.png" srcset="/img/loading.gif" lazyload alt="image-20220429161843754" style="zoom:50%;" />
 
 <h2 id="场景四"><a href="#场景四" class="headerlink" title="场景四"></a>场景四</h2><p>两个表都不是在 join key 上进行分区，DBMS 需要在节点之间 shuffling 数据来让每个节点上都有对应 join key 的分区的数据进行 join</p>
-<img src="Join算法笔记整理.assets/image-20220429162614451.png" srcset="/img/loading.gif" lazyload alt="image-20220429162614451" style="zoom:50%;" />
+<img src="image-20220429162614451.png" srcset="/img/loading.gif" lazyload alt="image-20220429162614451" style="zoom:50%;" />
 
-<img src="Join算法笔记整理.assets/image-20220429162625551.png" srcset="/img/loading.gif" lazyload alt="image-20220429162625551" style="zoom:50%;" />
+<img src="image-20220429162625551.png" srcset="/img/loading.gif" lazyload alt="image-20220429162625551" style="zoom:50%;" />
 
-<img src="Join算法笔记整理.assets/image-20220429162642489.png" srcset="/img/loading.gif" lazyload alt="image-20220429162642489" style="zoom:50%;" />
+<img src="image-20220429162642489.png" srcset="/img/loading.gif" lazyload alt="image-20220429162642489" style="zoom:50%;" />
 
 <h2 id="Semi-Join"><a href="#Semi-Join" class="headerlink" title="Semi-Join"></a>Semi-Join</h2><p>半连接是一种连接运算符，其结果仅包含左表中的列。 分布式 DBMS 使用半连接来最小化 Join 期间发送的数据量。</p>
 <p>它类似于自然连接，只是右表上不用于计算连接的属性受到限制（例如下图， 只发送<code>R.id</code> 到第二个节点上）。</p>
-<img src="Join算法笔记整理.assets/image-20220429163016850.png" srcset="/img/loading.gif" lazyload alt="image-20220429163016850" style="zoom:50%;" />
+<img src="image-20220429163016850.png" srcset="/img/loading.gif" lazyload alt="image-20220429163016850" style="zoom:50%;" />
 
 
 
@@ -420,9 +420,9 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/02/17/2022-03-%E6%9D%82/">
-                        <span class="hidden-mobile">2022-03-新年的两周(1.31~2.13)</span>
-                        <span class="visible-mobile">次の記事</span>
+                      <a href="/2022/03/25/6-s081-lab-traps%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A/">
+                        <span class="hidden-mobile">6.s081-lab traps实验报告</span>
+                        <span class="visible-mobile">Nächster</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
                     
@@ -439,7 +439,7 @@
     
       <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
         <div id="toc">
-  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;ディレクトリ</p>
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;TOC</p>
   <div class="toc-body" id="toc-body"></div>
 </div>
 
@@ -465,7 +465,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">検索</h4>
+        <h4 class="modal-title w-100 font-weight-bold">Suchen</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -474,7 +474,7 @@
         <div class="md-form mb-5">
           <input type="text" id="local-search-input" class="form-control validate">
           <label data-error="x" data-success="v"
-                 for="local-search-input">キーワード</label>
+                 for="local-search-input">Stichwort</label>
         </div>
         <div class="list-group" id="local-search-result"></div>
       </div>
