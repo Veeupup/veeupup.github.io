@@ -288,7 +288,7 @@ iconfont: //at.alicdn.com/t/font_1736178_kmeydafke9r.css
 navbar:
   # 导航栏左侧的标题，为空则按 hexo config 中 `title` 显示
   # The title on the left side of the navigation bar. If empty, it is based on `title` in hexo config
-  blog_title: "TanWei's Blog"
+  blog_title: "谭巍的Blog"
 
   # 导航栏毛玻璃特效，实验性功能，可能会造成页面滚动掉帧和抖动，部分浏览器不支持会自动不生效
   # Navigation bar frosted glass special animation. It is an experimental feature
@@ -641,11 +641,11 @@ post:
   # 评论插件
   # Comment plugin
   comments:
-    enable: false
+    enable: true
     # 指定的插件，需要同时设置对应插件的必要参数
     # The specified plugin needs to set the necessary parameters at the same time
     # Options: utterances | disqus | gitalk | valine | waline | changyan | livere | remark42 | twikoo | cusdis
-    type: disqus
+    type: gitalk
 
 
 #---------------------------
@@ -685,11 +685,11 @@ disqus:
 # Based on GitHub Issues
 # See: https://github.com/gitalk/gitalk#options
 gitalk:
-  clientID:
-  clientSecret:
-  repo:
-  owner:
-  admin: ['name']
+  clientID: 5934d27e154ce9ec8f87
+  clientSecret: 876c66d607e5e975aefc217caec9875478ebfa07
+  repo: veeupup.github.io
+  owner: veeupup
+  admin: ['veeupup']
   language: zh-CN
   labels: ['Gitalk']
   perPage: 10
@@ -937,11 +937,11 @@ links:
   # 评论插件
   # Comment plugin
   comments:
-    enable: false
+    enable: true
     # 指定的插件，需要同时设置对应插件的必要参数
     # The specified plugin needs to set the necessary parameters at the same time
     # Options: utterances | disqus | gitalk | valine | waline | changyan | livere | remark42 | twikoo | cusdis
-    type: disqus
+    type: gitalk
 
 
 #---------------------------
