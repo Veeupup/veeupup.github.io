@@ -1,10 +1,10 @@
 ---
 title: >-
-  [论文翻译]Delta Lake: High-Performance ACID Table Storage over Cloud Object
+  [论文笔记]Delta Lake: High-Performance ACID Table Storage over Cloud Object
   Stores2
 date: 2021-11-17 23:24:05
 categories:
-- 论文翻译
+- 论文笔记
 tags:
 - 数据仓库
 ---

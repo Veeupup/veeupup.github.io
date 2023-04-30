@@ -2,7 +2,7 @@
 title: SIGMOD'18 | Column Sketches
 date: 2023-02-09 23:55:12
 categories:
-- 论文翻译
+- 论文笔记
 tags:
 - 数据仓库
 ---

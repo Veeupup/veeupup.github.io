@@ -2,7 +2,7 @@
 title: Dremel | A Decade of Interactive SQL Analysis at Web Scale
 date: 2023-04-30 14:29:05
 categories:
-- 论文翻译
+- 论文笔记
 tags:
 - 数据仓库
 ---

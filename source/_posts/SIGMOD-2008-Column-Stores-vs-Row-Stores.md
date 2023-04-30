@@ -2,7 +2,7 @@
 title: SIGMOD 2008 | Column-Stores-vs-Row-Stores
 date: 2023-02-07 15:30:11
 categories:
-- 论文翻译
+- 论文笔记
 tags:
 - 数据仓库
 ---

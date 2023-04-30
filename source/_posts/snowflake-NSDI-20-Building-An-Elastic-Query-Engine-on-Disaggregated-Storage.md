@@ -2,7 +2,7 @@
 title: Snowflake NSDI'20 | Building An Elastic Query Engine on Disaggregated Storage
 date: 2023-02-06 00:03:57
 categories:
-- 论文翻译
+- 论文笔记
 tags:
 - 数据仓库
 ---
