@@ -1,6 +1,8 @@
 ---
 title: 树莓派3b搭建openwrt科学上网
 date: 2023-05-03 21:22:27
+categories:
+- 折腾
 tags:
 - 科学上网
 ---

@@ -1,6 +1,8 @@
 ---
 title: pipeline执行引擎以及一些工程优化
 date: 2023-04-30 15:13:04
+categories:
+- database
 tags:
 - 数据仓库
 - 执行引擎
