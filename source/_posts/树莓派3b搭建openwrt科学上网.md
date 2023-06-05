@@ -83,6 +83,10 @@ nohup: failed to run the command `/etc/openclash/clash`: Exec format error
 
 手动下载的地址为：https://github.com/vernesong/OpenClash/releases/tag/Clash，记得这里选中 armv7 版本下载即可，之后替换成功了，就能看到成功启动的日志了。
 
+## 连接 WAN LAN 
+
+我这边设置的 WAN 口和 LAN 口的网络属于两个网段，默认的防火墙配置是无法访问到的，这里需要配置 `网络 -> 防火墙` 中来自 WAN 的流量都接受，同时设置端口转发规则将
+
 # reference
 
 * basic 参考 https://www.jianshu.com/p/1d9f45197627
