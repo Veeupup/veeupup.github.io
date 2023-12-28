@@ -1,0 +1,810 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="要点总结本文读完的一些要记住的点  尝试通过垂直分区和 Index-only plans 等技术在行存储中模拟列存储的物理布局不会产生良好的性能。 我们将这种缓慢归因于tuple 的高昂重建成本，以及窄的垂直分区表中的每个 tuple 额外的高额开销。  分解了列存储能够如此有效地处理面向列的数据的原因 late materialization 将性能提高了三倍 compress 平均提供了大约两">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SIGMOD 2008 | Column-Stores-vs-Row-Stores">
+<meta property="og:url" content="http://tanweime.com/2023/02/07/SIGMOD-2008-Column-Stores-vs-Row-Stores/index.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="要点总结本文读完的一些要记住的点  尝试通过垂直分区和 Index-only plans 等技术在行存储中模拟列存储的物理布局不会产生良好的性能。 我们将这种缓慢归因于tuple 的高昂重建成本，以及窄的垂直分区表中的每个 tuple 额外的高额开销。  分解了列存储能够如此有效地处理面向列的数据的原因 late materialization 将性能提高了三倍 compress 平均提供了大约两">
+<meta property="og:locale">
+<meta property="og:image" content="http://tanweime.com/SSB.png">
+<meta property="og:image" content="http://tanweime.com/store_join_phase1.png">
+<meta property="og:image" content="http://tanweime.com/store_join_phase_2.png">
+<meta property="og:image" content="http://tanweime.com/store_join_phase3.png">
+<meta property="og:image" content="http://tanweime.com/row_store_exper.png">
+<meta property="og:image" content="http://tanweime.com/store_column_expr1.png">
+<meta property="article:published_time" content="2023-02-07T07:30:11.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.240Z">
+<meta property="article:author" content="tanwei">
+<meta property="article:tag" content="数据仓库">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/SSB.png">
+  
+  
+  
+  <title>SIGMOD 2008 | Column-Stores-vs-Row-Stores - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="SIGMOD 2008 | Column-Stores-vs-Row-Stores"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-02-07 15:30" pubdate>
+          February 7, 2023 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          7.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          24 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">SIGMOD 2008 | Column-Stores-vs-Row-Stores</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="要点总结"><a href="#要点总结" class="headerlink" title="要点总结"></a>要点总结</h1><p>本文读完的一些要记住的点</p>
+<ul>
+<li>尝试通过垂直分区和 <code>Index-only plans</code> 等技术在行存储中模拟列存储的物理布局不会产生良好的性能。 我们将这种缓慢归因于tuple 的高昂重建成本，以及窄的垂直分区表中的每个 tuple 额外的高额开销。 </li>
+<li>分解了列存储能够如此有效地处理面向列的数据的原因<ul>
+<li><code>late materialization</code> 将性能提高了三倍</li>
+<li><code>compress</code> 平均提供了大约两倍，或者一个数量级访问排序数据的查询的幅度</li>
+<li>提出了一种新的连接技术，称为 <code>invisible join</code>，可将性能进一步提高约 50%。</li>
+<li>使用谓词在事实表上建立 hash table 进行维度表的 bitmap 选择，多个不同事实表谓词选择的 bitmap 可以进行 AND，从而减少最终无序读取多个事实表or维度表的数据</li>
+<li>或者在某个维度表的属性连续的时候，改写成 between 谓词</li>
+</ul>
+</li>
+</ul>
+<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>列存的系统在AP的场景下性能要比传统的行存好一个数量级以上，一开始认为原因很简单：只不过是列存储读取数据的I&#x2F;O效率更高。这种简单的观点导致了一个错误的假设：即可以通过行存系统可以获取得到列存系统的分析性能（做法是：只是在行存中进行垂直分区或者独立索引每一列就认为转变为列存系统）。</p>
+<p>本文分析了行存和列存系统的性能差异，说明了在查询的执行器上的一些重要差异，还说明了许多列存上的查询技术对性能的影响，包括 向量化查询、压缩、以及一些新的 join 算法。最终得出结论：<strong>虽然行存并非不可能得到列存的某些性能优势，但是仍然需要对存储层和查询执行器都进行对应的改动才能获得列存方法的优势</strong>。</p>
+<h1 id="1-Introduction"><a href="#1-Introduction" class="headerlink" title="1 Introduction"></a>1 Introduction</h1><p>这些年有些列存的数据库例如 MonetDB，C-Store 出现，这些系统都在某些 AP 数仓场景下能够提供相较于传统行存的一个数量级以上的优势，但是这些实验对比通常仍然是和传统的行存对比，这些行存的系统还是使用传统的物理存储。虽然这种方法可以看到列存系统确实比行存更有优势，但是遗留下了一个重大问题：</p>
+<p><strong>这些性能提升是由于列存系统内部的架构的某些基本原因，还是说这种提升在行存系统中也能通过使用列存的物理存储来实现？</strong></p>
+<p>本文的作者是一个专业的DBA，使用了一些对行存的优化：</p>
+<ul>
+<li>将系统中的表垂直分区为两列（key -&gt; attribute），这样只需要读取必要的列</li>
+<li>只使用 index-only plan，每个列都上索引</li>
+<li>使用物化视图的集合，有一个视图包含 benchmark 中每个查询所需要的列，虽然会消耗巨大的空间，但是这是行存的最佳情况</li>
+</ul>
+<p>通过将这些技术与 SSBM 上开源的 C-Store 的性能进行比较，尽管上面的方法能够模拟数据库中的列存，但是 AP 性能很差，这表明在传统的TP系统中通过模拟列列存储格式并不能获得列存系统的优势。</p>
+<p>这里引出的第二个问题，列存中哪些具体的技术是列存相比行存在数据仓库方面具有显著优势的点？</p>
+<ul>
+<li>Late Materization（延迟物化）：从磁盘中读取的列尽可能晚的连接成行</li>
+<li>Block Iteration：不像 volcano 风格的迭代器每次只传递一个值，每次传递一组值</li>
+<li>基于列的压缩技术：例如 run-length encoding，能够在延迟物化的压缩数据上进行直接操作</li>
+<li>Invisible Join：本文刚提出的</li>
+</ul>
+<p>本文通过逐个删除这些优化来和行存的系统性能进行对比，发现 <strong>压缩可以提供数量级级别的优势，延迟物化可以提供大约3倍的性能提升，其他优化例如 block iteration 和 invisible join 平均提供了 1.5 倍的提升</strong>。本文有三个主要贡献：</p>
+<ul>
+<li>说明了在行存中模拟列存无法得到好的性能提升，并且通常认为在数仓中各种好技术也无法提升（only index-plan, bitmap index等）</li>
+<li>本文提出了一种新的 join 算法，invisible join，得出结论在行存中使用的非规范化性能增强技术在列存中试不必要的</li>
+</ul>
+<blockquote>
+<p>Q：啥是  that denormalization, an important but expensive (in space requirements) and complicated (in deciding in ad- vance what tables to denormalize) 非规范化</p>
+</blockquote>
+<ul>
+<li>通过分解各种技术，说明了多种列存技术对查询性能的提升，并在SSBM上证明了并证明了简单的面向列的实现，如果没有压缩和延迟实现并没有显着优于优化良好的行存储设计。</li>
+</ul>
+<h1 id="2-Background-And-Prior-Work"><a href="#2-Background-And-Prior-Work" class="headerlink" title="2 Background And Prior Work"></a>2 Background And Prior Work</h1><ul>
+<li>MonetDB和MonetDB&#x2F;X100是现代列存和向量化查询的先去，说明了由于CPU和cache的性能，面向列的设计可以在TPC-H等测试中明显优于各种商业和开源数据库。</li>
+<li>C-Store 是面向列更新的DB，很多操作和 MonetDB 类似，也有基于压缩数据直接操作的优化。</li>
+<li>Harizopoulos 自底向上构建简单的 早期物化说明列存好于行存，通过在 Shore 中构建了一个列存存储，提出了一种 ”super tuple“ 的优化，可以避免重复标头信息并将许多元组一起打包成一个块，这可以减少完全垂直分区方案的开销</li>
+</ul>
+<h1 id="3-STAR-Schema-Benchmark（SSB）"><a href="#3-STAR-Schema-Benchmark（SSB）" class="headerlink" title="3 STAR Schema Benchmark（SSB）"></a>3 STAR Schema Benchmark（SSB）</h1><p>本文使用 SSB 进行性能基准测试。SSB 源自 TPC-H，与 TPC-H 不同的是，SSB 使用的是纯 STAR 的 schema（数仓的最佳实践），包含比 TPC-H 更少的查询。可以看到 pattern 如下图：</p>
+<p><img src="/SSB.png" srcset="/img/loading.gif" lazyload alt="image-20230207115014748"></p>
+<p>和 TPC-H 一样，有一个比例因子可以用于缩放基准大小，本文使用 10 的比例因子，产生一个包含 60,000,000 个元组的 LINEOREDER 表。</p>
+<h1 id="4-ROW-Oriented-Execution"><a href="#4-ROW-Oriented-Execution" class="headerlink" title="4 ROW-Oriented Execution"></a>4 ROW-Oriented Execution</h1><p>下面介绍三种可以在面向行的数据库（化名 System X）实现列存数据库存储的设计方案</p>
+<h2 id="Vertical-Partitioning"><a href="#Vertical-Partitioning" class="headerlink" title="Vertical Partitioning"></a>Vertical Partitioning</h2><p>行存模拟列存最简单的方法就是采用完全垂直分区。在完全垂直分区的系统中，需要某种机制将每一行的各各列连接起来（列存通常采用存储相同的顺序来隐式匹配记录）。需要实现这种方法最简单就是增加一个整数的位置列（比主键更好，因为有时候主键可能多复合的），这种方法将为每个逻辑列创建一个物理表。当从同一关系中获取多个列时，查询将被重写以对位置属性执行 join。在实现中，默认情况下，System X 为此目的选择使用 hash join，这个效率很低下。 出于这个原因，我们尝试在每个表的位置列上添加聚集索引，并强制 System X 使用 index join，但这并没有提高性能，索引访问引起的额外 I&#x2F;O 使它们比 hash join 更慢。</p>
+<h2 id="Index-only-plans"><a href="#Index-only-plans" class="headerlink" title="Index-only plans"></a>Index-only plans</h2><p>垂直分区方法有两个问题。 首先，它要求在每一列中存储位置属性，这会浪费磁盘和I&#x2F;O带宽。 其次，大多数行存储在每个元组上存储一个相对较大的 header，这进一步浪费了空间（列存储通常，将header存储在单独的列中以避免这些开销）。</p>
+<p> 为了改善这些问题，本文考虑的第二种方法使用 index-only plans，其中使用标准的、面向行的设计存储存储基础的 schema，但在每个表的每一列上添加一个额外的非聚集 B+Tree 索引（添加二级索引）。</p>
+<p> index-only plans 需要数据库的特殊支持，但由 System X 实现，通过构建满足每个表上的谓词的 (record-id,value) 对列表来工作，在内存中合并在一张表上的多个谓词，通过对比每个二级索引的 rid 来去除一些不必要的行。 当必填字段没有谓词时，可以生成列中所有 (record-id,value) 对的 list。 看到这样可以不实际访问实际的数据，但是仍然可以存储对应的 rids，也不存储重复的列值，而且由于没有了 header 的开销，所以 overhead 更小了。</p>
+<blockquote>
+<p>Q：这里的 header 指什么？指类似 innodb page 上的 meta 信息吗？每个 tuple 都有的</p>
+</blockquote>
+<p>这个方法在没有谓词的列上性能会比直接扫描 heap file 更差，因为要走二级索引。所以一个优化手段是创建具有复合键的索引（composite index），在无谓词的列上和其他列一起建立二级索引。 通过<strong>将每个维度表的主键存储为该维度表属性的索引的辅助排序属性</strong>，这样可以高效地访问到需要与事实表连接的维度的主键值。</p>
+<h2 id="Materialized-Views"><a href="#Materialized-Views" class="headerlink" title="Materialized Views"></a>Materialized Views</h2><p>实现一些物化视图，这些物化视图给每个 query 都创建一组最佳视图，都只包含该 flight 中查询所需要的列，而不是提前预先做好 join。做这个优化的目的是让 System X 只从磁盘读取想要的数据，避免额外的存储 record-id 或者 position，也避免给每个 tuple 都存储 tuple header。</p>
+<h1 id="5-Column-Oriented-Execution"><a href="#5-Column-Oriented-Execution" class="headerlink" title="5 Column-Oriented Execution"></a>5 Column-Oriented Execution</h1><h2 id="5-1-Compression"><a href="#5-1-Compression" class="headerlink" title="5.1 Compression"></a>5.1 Compression</h2><p>面向列的压缩算法压缩数据并且操作时以这种压缩格式保存数据已经证明可以将查询性能提高一个数量级。存储在列中的数据比行中的数据更好压缩，而且压缩算法在信息熵低（数据局部性高）的数据上表现更好。此外，例如如果数据按照某一列排序，那么该列式超级可压缩的（相同值可以进行 RLE）。</p>
+<p>上面说的只会影响压缩率，但是磁盘空间很便宜。压缩更重要的是可以提高性能，因为如果数据被压缩，那么当数据从磁盘读入内存（或从内存读入 CPU）时，在 I&#x2F;O 上花费的时间就会减少。 因此，一些优化压缩比的“重量级”压缩方案（例如 Lempel-Ziv, Huffman, or arithmetic encoding）可能不如牺牲压缩比以进行解压的“轻量级”压缩方案上性能更好。 事实上，压缩可以提高查询性能，而不仅仅是节省 I&#x2F;O。 如果面向列的查询执行器可以直接对压缩后的数据进行操作，就可以完全避免解压，进一步提高性能。例如对于RLE的数据进行计数的时候可以直接计算，进一步降低CPU消耗。</p>
+<p>行存储中的压缩与列存储中的压缩之间的最大区别是对列进行排序（或二次排序）并且列中连续重复相同值的情况。如果是行存的话，由于周围的值的影响，排序会很难搞。因此，一般来说，如果查询访问的大部分列具有某种程度的顺序，则压缩会对查询性能产生更大的影响。</p>
+<h2 id="5-2-Late-Materialization"><a href="#5-2-Late-Materialization" class="headerlink" title="5.2 Late Materialization"></a>5.2 Late Materialization</h2><p>延迟物化，来自多个列的数据必须组合在一起成一个一行的 tuple，类似的 tuple Materialization 在列存系统中很常见。早期物化也就是将列存数据读到内存中来之后就组合，然后利用一些行存计算的 operator 计算并不能很好的提升计算性能。</p>
+<p>比较新的列存例如X100，C-Store都很晚才进行物化。例如，一个查询在两列上应用谓词，并从所有传递谓词的元组中投射第三个属性。 在使用 延迟物化 的列存储中，谓词分别应用于每个属性的列，并生成通过谓词的值的位置列表（列内的序数偏移量）。 根据谓词的选择性，这个位置列表可以表示为一个简单的数组、一个 bitmap（其中第 i 位中的 1 表示第 i 个值通过了谓词）或一组位置范围。 然后将这些位置表示相交（如果它们是位串，则可以使用按位 AND 运算）以创建单个位置列表。 然后将此列表发送到第三列以提取所需位置的值。</p>
+<p>延迟物化有四个优点：</p>
+<ol>
+<li>select 和 agg 操作符倾向于让某些物化变得不必要</li>
+<li>使用面向列的压缩方法压缩数据，则必须在将值与其他列的值组合之前对其进行解压缩。 这消除了直接对上述压缩数据进行操作的优势。</li>
+<li>直接使用列数据操作时候，缓存性能提升</li>
+<li>block iteration 对于固定长度属性具有更高的性能</li>
+</ol>
+<h2 id="5-3-Block-Iteration"><a href="#5-3-Block-Iteration" class="headerlink" title="5.3 Block Iteration"></a>5.3 Block Iteration</h2><p>为了处理一系列元组，行存储首先遍历每个元组，然后需要通过元组表示接口从这些元组中提取所需的属性。 在许多情况下，例如在 MySQL 中，这会导致一次处理一个元组，其中有 1-2 个函数调用来为每个操作从元组中提取所需的数据（如果它是一个小表达式或谓词计算，与函数调用相比成本较低）。</p>
+<p>最近的工作表明，如果元组块立即可用并在单个运算符调用中操作，则可以在行存储中减少元组处理的一些每元组开销，这在 IBM 中实现了 DB2 [。 与行存储中的逐案实现相反，在所有列存储（我们知道）中，来自同一列的 block of value 在单个函数调用中被发送到运算符。 此外，如果不需要属性提取，如果列是固定宽度的，这些值可以直接作为数组进行迭代。 将数据作为数组进行操作不仅可以最大限度地减少每个元组的开销，而且还可以利用现代 CPU 的并行性潜力，因为可以使用循环流水线技术 。</p>
+<h2 id="5-4-Invisible-Join"><a href="#5-4-Invisible-Join" class="headerlink" title="5.4 Invisible Join"></a>5.4 Invisible Join</h2><p>对数据仓库的查询，特别是对使用STAR模式建模的数据仓库的查询，通常具有以下结构：使用一个（或多个）维度表上的选择谓词来限制事实表中的 tuple 。 然后，对受限事实表进行一些聚合，通常根据其他维度表属性进行分组。 因此，需要为每个选择谓词和每个聚合分组执行事实表和维度表之间的连接。 Star Schema Benchmark 的 Query 3.1 就是一个很好的例子。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs SQL"><span class="hljs-keyword">SELECT</span> c.nation, s.nation, d.year,<br>       <span class="hljs-built_in">sum</span>(lo.revenue) <span class="hljs-keyword">as</span> revenue<br><span class="hljs-keyword">FROM</span> customer <span class="hljs-keyword">AS</span> c, lineorder <span class="hljs-keyword">AS</span> lo,<br>     supplier <span class="hljs-keyword">AS</span> s, dwdate <span class="hljs-keyword">AS</span> d<br><span class="hljs-keyword">WHERE</span> lo.custkey <span class="hljs-operator">=</span> c.custkey<br>  <span class="hljs-keyword">AND</span> lo.suppkey <span class="hljs-operator">=</span> s.suppkey<br>  <span class="hljs-keyword">AND</span> lo.orderdate <span class="hljs-operator">=</span> d.datekey<br>  <span class="hljs-keyword">AND</span> c.region <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;ASIA&#x27;</span><br>  <span class="hljs-keyword">AND</span> s.region <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;ASIA&#x27;</span><br>  <span class="hljs-keyword">AND</span> d.year <span class="hljs-operator">&gt;=</span> <span class="hljs-number">1992</span> <span class="hljs-keyword">and</span> d.year <span class="hljs-operator">&lt;=</span> <span class="hljs-number">1997</span><br><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> c.nation, s.nation, d.year<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> d.year <span class="hljs-keyword">asc</span>, revenue <span class="hljs-keyword">desc</span>;<br></code></pre></td></tr></table></figure>
+
+<p>此查询查找 1992 年至 1997 年期间居住在亚洲并购买亚洲供应商提供的产品的客户的总收入，按客户所在国家&#x2F;地区、供应商所在国家&#x2F;地区和供应商所在国家&#x2F;地区的每个唯一组合分组 交易的年份。</p>
+<p>执行这些类型的查询的传统计划是按照谓词选择性顺序进行管道连接。 例如，如果 c.region &#x3D; ‘ASIA’ 是最具选择性的谓词，则首先执行 lineorder 和 customer 表之间的 custkey 连接，过滤 lineorder 表，以便只保留来自居住在亚洲的客户的订单。 在执行此连接时，这些客户的国家被添加到连接的客户订单表中。 这些结果通过管道传输到与供应商表的连接中，其中应用了 thes.region &#x3D; ‘ASIA’ 谓词并提取了 s.nation，然后是与数据表的连接和应用的年份谓词。 然后对这些连接的结果进行分组和聚合，并根据 ORDER BY 子句对结果进行排序。</p>
+<p>传统计划的替代方案是延迟物化 join 技术。 在这种情况下，谓词应用于 c.region 列 (c.region &#x3D; ‘ASIA’)，并在与该谓词匹配的位置提取客户表的客户键。 然后将这些键与事实表中的客户键列连接起来。 这个连接的结果是两组位置，一组用于事实表，一组用于维度表，指示来自各个表的哪些元组对通过连接谓词并被连接。 通常，这两个位置列表中最多有一个是按排序顺序生成的（连接中的外表，通常是事实表）。 然后从 c.nation 列的这个（乱序）位置集合中提取值，连同来自其他事实表列（供应商键、订单日期和收入）的值（使用有序的位置集合） . 然后对供应商和日期表执行类似的连接。</p>
+<p>这些计划中的每一个都有一系列缺点。 在第一种（传统的）情况下，在连接之前构建元组排除了第 5.2 节中描述的所有延迟实现的好处。 在第二种情况下，需要以错位顺序从维度表分组列中提取值，这可能会产生很大的成本。</p>
+<p>作为这些查询计划的替代方案，我们引入了一种我们称为 invisible join 的技术，它可以在面向列的数据库中用于 STAR PATTERN 上的外键&#x2F;主键连接。 它是一个延迟物化连接，但最大限度地减少了需要乱序提取的值，从而减轻了上述两组缺点。 它的工作原理是将连接重写为事实表中外键列的谓词。 这些谓词可以通过使用散列查找（在这种情况下模拟 hash join ）或使用更高级的方法来计算，例如我们称为谓词间重写的技术，将在下面的第 5.4.2 节中讨论。</p>
+<p>通过将 join 重写为事实表列上的选择谓词，它们可以与应用于事实表的其他选择谓词以及先前工作中描述的任何谓词应用算法同时执行可以使用。 例如，可以并行应用每个谓词，并使用快速位图操作将结果合并在一起。 或者，谓词应用程序的结果可以通过管道传输到另一个谓词应用程序中，以减少必须应用第二个谓词的次数。 只有在应用了所有谓词之后，才会从相关维度中提取适当的元组（这也可以并行完成）。 通过在执行此提取之前等到所有谓词都已应用，可以最大限度地减少无序提取的数量。</p>
+<blockquote>
+<p>也就是先把所有的 选择谓词都做完，然后再去提取对应的表列的值</p>
+</blockquote>
+<p>不可见连接扩展了之前关于提高星型模式连接性能的工作，这让人想起半连接通过利用面向列的布局，并重写谓词以避免哈希查找，如 如下面所描述的。</p>
+<h3 id="join-details"><a href="#join-details" class="headerlink" title="join details"></a>join details</h3><p>不可见连接分三个阶段执行连接。 首先，将每个谓词应用于适当的维度表以提取满足谓词的维度表键列表。 这些键用于构建哈希表，该哈希表可用于测试特定键值是否满足谓词（哈希表应该很容易放入内存，因为维度表通常很小并且表仅包含键）。 图 2 显示了针对某些示例数据执行上述查询的第一阶段的示例。</p>
+<p><img src="/store_join_phase1.png" srcset="/img/loading.gif" lazyload alt="image-20230207144918003"></p>
+<p>在下一阶段，每个哈希表用于提取满足相应谓词的记录在事实表中的位置。 这是通过使用事实表外键列中的每个值探查哈希表，创建外键列中满足谓词的所有位置的列表来完成的。 然后，将来自所有谓词的位置列表相交以生成事实表中满足位置 P 的列表。 图 3 显示了第二阶段的执行示例。请注意，位置列表可以是明确的位置列表，也可以是示例中所示的位图。</p>
+<p><img src="/store_join_phase_2.png" srcset="/img/loading.gif" lazyload alt="image-20230207145006199"></p>
+<p> 连接的第三阶段使用事实表中满足位置 P 的列表。 对于包含回答查询所需的维度表的外键引用的事实表中的每个列 C（例如，在选择列表、分组依据或聚合子句中引用维度列的位置），外键值来自 C是用P提取出来的，在对应的维表中查找。 请注意，如果维度表键是一个从 1 开始的排序的、连续的标识符列表（这是常见的情况），那么外键实际上表示所需元组在维度表中的位置。 这意味着可以使用此位置列表直接提取所需的维度表列（这只是一个快速数组查找）。</p>
+<p>这种直接的数组提取是（连同维度表通常很小，因此被查找的列通常可以放在 L2 缓存中的事实）为什么这种连接不会遭受上述先前发布的延迟物化的陷阱的原因。 join 方法由于维度表值提取的乱序性质，最终位置列表提取非常昂贵。 此外，需要提取的数值被最小化，因为 P 中的位置数取决于整个查询的选择性，而不是仅取决于到目前为止已执行的查询部分的选择性。</p>
+<p>图 4 显示了第三阶段的执行示例。请注意，对于日期表，键列不是从 1 开始的经过排序的连续标识符列表，因此必须执行完全连接（而不仅仅是一个 位置提取）。 此外，请注意，由于这是一个外键主键连接，并且由于已经应用了所有谓词，因此对于相交位置列表中的每个位置，从事实中保证每个维度表中只有一个结果。 这意味着来自第三阶段的每个维表连接都有相同数量的结果，因此每个连接都可以单独完成，并在稍后的查询计划中将结果组合（缝合在一起）。</p>
+<p><img src="/store_join_phase3.png" srcset="/img/loading.gif" lazyload alt="image-20230207145128497"></p>
+<h3 id="Between-Predicate-Rewriting"><a href="#Between-Predicate-Rewriting" class="headerlink" title="Between-Predicate Rewriting"></a>Between-Predicate Rewriting</h3><blockquote>
+<p>就是将前面提到的 hash join 改写成 between 谓词判断，需要维度表的某些键的集合是连续的，这样可以直接在事实表上进行裁剪，而不是使用 hash join 去进行查找</p>
+</blockquote>
+<p>正如到目前为止所描述的，这个算法只不过是另一种思考面向列的 semijoin 或 late Materialization hash join 的方法。 尽管连接的散列部分被表示为事实表列上的谓词，但实际上应用谓词的方式与执行（ Late Materialization ） hash join 的方式之间几乎没有区别。 将连接表示为谓词的优势在常见情况（对于星型模式连接）中发挥作用，在这种情况下，在应用谓词之后保留的维表中的键集是连续的。 在这种情况下，可以使用我们称为“between-predicate rewriting”的技术，其中可以将谓词从事实表上的哈希查找谓词重写为外键位于之间的“between”谓词 键范围的两端。 例如，如果在应用谓词后有效的连续键集是键 1000-2000，那么不是将这些键中的每一个插入到哈希表中，而是探查哈希表中的每个外键值 事实表，我们可以简单地检查外键是否在 1000 到 2000 之间。如果是，则元组连接； 否则它不会。 由于显而易见的原因，谓词之间的执行速度更快，因为可以直接评估它们而无需查找任何内容。</p>
+<p>应用此优化的能力取决于这些有效维度表键的集合是连续的。 在许多情况下，此属性不成立。 例如，未排序字段上的范围谓词会导致结果位置不连续。 甚至对于已排序字段上的谓词，按该属性对维度表进行排序的过程也可能会重新排序主键，因此它们不再是有序的、连续的标识符集。 然而，通过使用字典编码来实现密钥重新分配（而不是压缩），可以轻松缓解后一种担忧。 由于键是唯一的，因此字典对列进行编码会导致字典键成为从 0 开始的有序连续列表。只要事实表外键列使用相同的字典表进行编码，哈希表就可以在 -可以执行谓词重写。</p>
+<p>此外，关于优化仅适用于维度表的已排序列的谓词的断言并不完全正确。 事实上，数据仓库中的维度表通常包含粒度越来越细的属性集。 例如，SSBM 中的日期表有一个年列、一个年月列和完整的日期列。 如果表按年排序，第二次按年月排序，第三次按完整日期排序，那么对这三列中任何一列的相等谓词都将产生一组连续的结果（或对已排序的结果进行范围谓词） 柱子）。 又如，供应商表有地区列、国家列和城市列（一个地区有多个国家，一个国家有多个城市）。 同样，从左到右排序将导致对这三列中的任何一列的谓词产生连续的范围输出。 由于在连续查询中汇总数据的 OLAP 实践（按地区告诉我利润，按国家告诉我利润，告诉我按城市告诉我利润），数据仓库查询经常访问这些列。 因此，“谓词间重写”可以比人们最初预期的更频繁地使用，并且（正如我们在下一节中展示的那样）通常会产生显着的性能提升。</p>
+<p>请注意，谓词重写不需要更改查询优化器来检测何时可以使用此优化。 根据维表评估谓词的代码能够检测结果集是否连续。 如果是这样，事实表谓词将在运行时重写。</p>
+<h1 id="6-Experiments"><a href="#6-Experiments" class="headerlink" title="6 Experiments"></a>6 Experiments</h1><p>SSB 测试</p>
+<h2 id="6-1-Motivation-for-Experimental-Setup"><a href="#6-1-Motivation-for-Experimental-Setup" class="headerlink" title="6.1 Motivation for Experimental Setup"></a>6.1 Motivation for Experimental Setup</h2><h2 id="6-2-Column-Store-Simulation-in-a-Row-Store"><a href="#6-2-Column-Store-Simulation-in-a-Row-Store" class="headerlink" title="6.2 Column-Store Simulation in a Row-Store"></a>6.2 Column-Store Simulation in a Row-Store</h2><p>用行列模拟列存。</p>
+<p>可以看到还是物化视图效果最好，水平分区和全索引效果最差。</p>
+<p><img src="/row_store_exper.png" srcset="/img/loading.gif" lazyload alt="image-20230207150647009"></p>
+<h2 id="6-3-Column-Store-Performance"><a href="#6-3-Column-Store-Performance" class="headerlink" title="6.3 Column-Store Performance"></a>6.3 Column-Store Performance</h2><p><img src="/store_column_expr1.png" srcset="/img/loading.gif" lazyload alt="image-20230207151424895"></p>
+<p><a target="_blank" rel="noopener" href="http://www.ayqy.net/blog/database-denormalization/">反范式化</a> 是一种不错的优化手段</p>
+<blockquote>
+<p>所谓反范式化，是一种针对遵从设计范式的数据库（关系模式）的性能优化策略：</p>
+<blockquote>
+<p>Denormalization is a strategy used on a previously-normalized database to increase performance.</p>
+</blockquote>
+<p>P.S.注意，<em>反范式化不等于非范式化</em>（<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Unnormalized_form">Unnormalized form</a>），反范式化一定发生在满足范式设计的基础之上。前者相当于先遵守所有规则，再进行局部调整，故意打破一些规则，而后者全然不顾规则</p>
+<p>通过增加冗余数据或对数据进行分组，<em>牺牲一部分写入性能，换取更高的读取性能</em>：</p>
+<blockquote>
+<p>In computing, denormalization is the process of trying to improve the read performance of a database, at the expense of losing some write performance, by adding redundant copies of data or by grouping data.</p>
+</blockquote>
+<p>在设计范式的约束下，数据表中没有冗余信息（某个数据只存放在某张表的某个单元格中），为了得到某个数据可能需要一系列的跨表查询，因而读操作性能不佳，但写操作很快，因为更新数据时只需要修改一处</p>
+<p>反范式化就是要打破这种约束，<em>把某些数据在不同的地方多放几份</em>，以加快数据检索速度：</p>
+<blockquote>
+<p>The opposite of normalization, denormalization is the process of putting one fact in many places.</p>
+</blockquote>
+</blockquote>
+<h1 id="7-Conclusion"><a href="#7-Conclusion" class="headerlink" title="7 Conclusion"></a>7 Conclusion</h1><p>在本文中，我们在数据仓库基准 SSBM 上将 C-Store 的性能与商业行存储系统的几种变体进行了比较。 我们表明，尝试通过垂直分区和仅索引计划等技术在行存储中模拟列存储的物理布局不会产生良好的性能。 我们将这种缓慢归因于高元组重建成本，以及窄的垂直分区表中的高每元组开销。 我们分解了列存储能够如此有效地处理面向列的数据的原因，发现 <code>late materialization</code> 将性能提高了三倍，而 <code>compress</code> 平均提供了大约两倍，或者一个数量级访问排序数据的查询的幅度。 我们还提出了一种新的连接技术，称为 <code>invisible join</code>，可将性能进一步提高约 50%。</p>
+<p>这项工作的结论并不是说在行存储中模拟列存储是不可能的。 相反，这种模拟在当今的行存储系统上表现不佳（我们的实验是在 System X 的最新产品版本上进行的）。 一个成功的面向列的模拟将需要一些重要的系统改进，例如虚拟记录 ID、减少元组开销、排序数据的快速合并连接、跨多个元组的运行长度编码，以及一些面向列的查询执行技术，如 直接操作压缩数据、块处理、不可见连接和延迟物化。 其中一些改进已经实施或提议在各种不同的行存储中实施； 然而，构建一个完整的行存储可以在列存储表现良好的工作负载上转换为列存储是一个有趣的研究问题。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" class="category-chain-item">论文笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/" class="print-no-link">#数据仓库</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>SIGMOD 2008 | Column-Stores-vs-Row-Stores</div>
+      <div>http://tanweime.com/2023/02/07/SIGMOD-2008-Column-Stores-vs-Row-Stores/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>tanwei</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>February 7, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/02/09/SIGMOD%E2%80%9918-Column-Sketches/" title="SIGMOD&#39;18 | Column Sketches">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SIGMOD&#39;18 | Column Sketches</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/02/06/snowflake-NSDI-20-Building-An-Elastic-Query-Engine-on-Disaggregated-Storage/" title="Snowflake NSDI&#39;20 | Building An Elastic Query Engine on Disaggregated Storage">
+                        <span class="hidden-mobile">Snowflake NSDI&#39;20 | Building An Elastic Query Engine on Disaggregated Storage</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: 'a91525c1d4b319151e08f70190d9bb45'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,447 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="最近因为有些事情，好久没更新了，这次抽点时间又把后面的 lab 做一下，来记录下笔记便于之后自己复习">
+<meta property="og:type" content="website">
+<meta property="og:title" content="6.s081-lab pgtbl实验报告">
+<meta property="og:url" content="http://tanweime.com/backup/6-s081-lab-pgtbl%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="最近因为有些事情，好久没更新了，这次抽点时间又把后面的 lab 做一下，来记录下笔记便于之后自己复习">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-03-21T12:13:49.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.257Z">
+<meta property="article:author" content="tanwei">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>6.s081-lab pgtbl实验报告 - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 60vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="6.s081-lab pgtbl实验报告"></span>
+          
+        </div>
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      <div class="container nopadding-x-md">
+        <div id="board"
+          >
+          
+          <div class="container">
+            <div class="row">
+              <div class="col-12 col-md-10 m-auto">
+                
+
+<article class="page-content">
+  <p>最近因为有些事情，好久没更新了，这次抽点时间又把后面的 lab 做一下，来记录下笔记便于之后自己复习</p>
+<span id="more"></span>
+
+<h2 id="Print-a-page-table"><a href="#Print-a-page-table" class="headerlink" title="Print a page table"></a>Print a page table</h2><p>This is how I solved it:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">void</span><br><span class="hljs-title function_">vmprint</span><span class="hljs-params">(<span class="hljs-type">pagetable_t</span> pagetable)</span><br>&#123;<br>  <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;page table %p\n&quot;</span>, pagetable);<br>  kvmprint(pagetable, <span class="hljs-number">2</span>);<br>  <span class="hljs-keyword">return</span>;<br>&#125;<br><br><span class="hljs-type">void</span><br><span class="hljs-title function_">kvmprint</span><span class="hljs-params">(<span class="hljs-type">pagetable_t</span> pagetable, <span class="hljs-type">int</span> level)</span><br>&#123;<br>  <span class="hljs-keyword">if</span> (level &lt; <span class="hljs-number">0</span>)<br>    <span class="hljs-keyword">return</span>;<br>  <br>  uint64 MAX_ENTRIES = <span class="hljs-number">512</span>;<br>  <span class="hljs-type">pte_t</span> *pte;<br>  uint64 pa;<br>  <span class="hljs-type">int</span> loop = <span class="hljs-number">3</span> - level;<br><br>  <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; MAX_ENTRIES; i++) &#123;<br>    pte = &amp;pagetable[i];<br>    <span class="hljs-keyword">if</span> (*pte &amp; PTE_V) &#123;<br>      pa = PTE2PA(*pte);<br>      <span class="hljs-keyword">if</span> (pa == <span class="hljs-number">0</span> || pa &gt;= PHYSTOP) &#123;<br>        <span class="hljs-keyword">continue</span>;<br>      &#125;<br>      <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; loop - <span class="hljs-number">1</span>; i++)<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;.. &quot;</span>);<br>      <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;..%d: pte %p pa %p\n&quot;</span>, i, *pte, pa);<br>      <span class="hljs-type">pagetable_t</span> pgtbl = (<span class="hljs-type">pagetable_t</span>)pa;<br>      kvmprint(pgtbl, level - <span class="hljs-number">1</span>);<br>    &#125;<br>  &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="A-kernel-page-table-per-process"><a href="#A-kernel-page-table-per-process" class="headerlink" title="A kernel page table per process"></a>A kernel page table per process</h2><p>goal：</p>
+<ul>
+<li>allow the kernel to directly dereference user pointers</li>
+</ul>
+<blockquote>
+<p>内核和用户空间保存了不同的页表，内核不包含用户空间的页表，所以当用户空间进行系统调用的时候，如果传入了一个用户空间的指针（例如，write 的 buffer 指针），那么内核必须首先将这个将这个指针翻译成物理地址再进行操作</p>
+</blockquote>
+<p>job：</p>
+<ul>
+<li>修改内核，让每个进程都有一份对内核页表的拷贝，修改 <code>struct proc</code> 让每个进程都有一个内核页表，然后修改 <code>scheduler</code>，让内核切换的时候能够修改内核页表，在这一步，每个进程的内页页表应该和全局的内核页表一模一样</li>
+</ul>
+<blockquote>
+<p>需要理解的点：</p>
+<ul>
+<li>跳板页是在用户空间和内核空间中都存在的，进行系统调用的时候从这个地方进入，两者有相同的代码段，这样就可以传递参数到内核空间中，然后在内核栈中进行系统调用的执行，然后再将结果放到跳板页中来返回继续执行了，这样就得到了系统调用的返回值</li>
+<li>但是之前系统调用的时候切换了页表，所以在用户空间没有内核的页表，所以内核无法解析用户空间的指针对应的内存位置</li>
+</ul>
+</blockquote>
+<p>Some hints:</p>
+<ul>
+<li>Add a field to <code>struct proc</code> for the process’s kernel page table.</li>
+</ul>
+<blockquote>
+<p>修改 <code>proc.c</code> 中的 <code>struct proc</code> ，给结构体增加一个新的变量</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc</span> &#123;</span><br>...  <br><span class="hljs-type">pagetable_t</span> kpagetable;      <span class="hljs-comment">// Kernel page table</span><br>...<br>&#125;<br></code></pre></td></tr></table></figure>
+</blockquote>
+<ul>
+<li>A reasonable way to produce a kernel page table for a new process is to implement a modified version of <code>kvminit</code> that makes a new page table instead of modifying <code>kernel_pagetable</code>. You’ll want to call this function from <code>allocproc</code>.</li>
+</ul>
+<blockquote>
+<p>在思考，如果需要在切换到内核中的时候能够直接 dereference，那么就是说在 内核态 执行代码的时候直接用刚才保存的这个页表才行，这个页表中应该也要保存用户空间内的地址映射</p>
+</blockquote>
+<ul>
+<li>Make sure that each process’s kernel page table has a mapping for that process’s kernel stack. In unmodified xv6, all the kernel stacks are set up in <code>procinit</code>. You will need to move some or all of this functionality to <code>allocproc</code>.</li>
+</ul>
+<blockquote>
+<p><code>procinit</code> ，注意在 xv6 中的进程都是复用之前的，申请到的栈空间都直接保存到了内核页表中但是之后，不仅需要保存内核栈的地址映射到 kernel pagetable 中，也需要将其映射到用户空间的内核栈中，所以可以直接推迟每个内核栈的初始化</p>
+<p>是否可以直接在 <code>allocproc</code> 的过程中获取到内核栈的物理地址，然后也映射到用户空间的内核页表中呢？</p>
+<p>这个思路看上去不太好，因为内核页表并没有暴露 kernel_pagetable 到外面，所以不是很好在已经初始化好之后再修改，应该每次都重新分配一下内核栈，然后同时映射到内核页表和用户空间的内核页表中去</p>
+<p>突然想到这样效率可能不高，是不是可以把内核栈的物理地址保存到 proc 中，然后每次 alloc 的时候把这个物理地址映射到进程的内核栈中去</p>
+</blockquote>
+<ul>
+<li>Modify <code>scheduler()</code> to load the process’s kernel page table into the core’s <code>satp</code> register (see <code>kvminithart</code> for inspiration). Don’t forget to call <code>sfence_vma()</code> after calling <code>w_satp()</code>.</li>
+</ul>
+<blockquote>
+<p>在调度器进行调度的时候，如果找到了一个可以运行的进程，那么直接切换到内核进程的页表</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// 切换内核页表</span><br>w_satp(MAKE_SATP(p-&gt;kpagetable));<br>sfence_vma();<br></code></pre></td></tr></table></figure>
+</blockquote>
+<ul>
+<li><code>scheduler()</code> should use <code>kernel_pagetable</code> when no process is running.</li>
+</ul>
+<blockquote>
+<p>有一个现成的函数实现，直接在空循环的时候调用即可，</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs c">kvminithart();<br></code></pre></td></tr></table></figure>
+</blockquote>
+<ul>
+<li>Free a process’s kernel page table in <code>freeproc</code>.</li>
+<li>You’ll need a way to free a page table without also freeing the leaf physical memory pages.</li>
+</ul>
+<blockquote>
+<p>注意，内核页表本身并没有申请任何内存，只是保存了映射，所以直接 freewalk 的实现其实就OK了，这个理解并不对，进行 page map 的时候会递归生成相应的页面，所以最后也得全部都释放掉，不然找不到内存了，这里只需要释放掉对应的页表的空间就行了，不需要释放掉实际映射的物理页面</p>
+</blockquote>
+<p>上面是我自己在做的时候的一些想法和笔记，但是在实际实现的时候需要对实际的过程理解清楚即可，下面是实现的几个重要的点：</p>
+<ol>
+<li>需要给 process 中的 kernel pagetable 进行映射，映射 kernel pagetable 的地址空间，但是注意在释放的时候不需要释放掉实际的物理页面，因为所有进程都使用了这些物理页面，只需要释放掉每个进程对应的页表即可</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">static</span> <span class="hljs-keyword">struct</span> proc*<br><span class="hljs-title function_">allocproc</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>...<br>  <span class="hljs-comment">// user kernel pagetable.</span><br>  p-&gt;k_pagetable = proc_k_pagetable(p);<br>  <span class="hljs-keyword">if</span> (p-&gt;k_pagetable == <span class="hljs-number">0</span>)<br>  &#123;<br>    freeproc(p);<br>    release(&amp;p-&gt;lock);<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>  &#125;<br>  <span class="hljs-type">char</span> *pa = kalloc();<br>  <span class="hljs-keyword">if</span>(pa == <span class="hljs-number">0</span>)<br>    panic(<span class="hljs-string">&quot;kalloc&quot;</span>);<br>  uint64 va = KSTACK((<span class="hljs-type">int</span>) (p - proc));<br>  <span class="hljs-comment">// 将 kernel stack 映射到内核页表中，不要忘记这一条</span><br>  ukvmmap(p-&gt;k_pagetable, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);<br>  p-&gt;kstack = va;<br><br>...<br>  <span class="hljs-keyword">return</span> p;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+
+
+
+<h1 id="Simplify-copyin-copyinstr"><a href="#Simplify-copyin-copyinstr" class="headerlink" title="Simplify copyin/copyinstr"></a>Simplify <code>copyin/copyinstr</code></h1><p>Goal:</p>
+<ul>
+<li>内核的 <code>copyin</code> 方法从用户的指针读取内存，这个函数将翻译成内核能够直接读取的物理地址。这个函数是通过 <code>walking</code> 每个进程的页表来实现的，现在需要给每个进程的内核页表添加上 <code>user mappings</code>，来让<code>copyin</code> （<code>copyinstr</code>）可以直接解引用用户的指针</li>
+</ul>
+<p>job：</p>
+<ul>
+<li>替换 <code>kernel/vm.c</code> 里面的 <code>copyin</code> 函数，让他调用 <code>copyin_new</code> ，对于 <code>copyinstr</code> 和 <code>copyinstr_new</code> 来做相同的事情，给内核页表来添加用户映射</li>
+</ul>
+<p>这个模式如果要行得通，需要用户的虚拟地址不要和内核的虚拟地址发现重叠。xv6 的用户进程空间的虚拟地址从 0 开始，内核的虚拟地址从一个更高的地址开始。然而这个模式需要限制内核的虚拟地址和用户的虚拟地址的范围，当内核启动之后，将会从 <code>0xC0000000</code> 地址 PLIC 开始执行，这个地址保存在 <code>PLIC</code> 寄存器中，需要阻止 xv6 的用户地址空间不要超过 <code>PLIC</code> 的地址</p>
+<p>Hints:</p>
+<ul>
+<li>Replace <code>copyin()</code> with a call to <code>copyin_new</code> first, and make it work, before moving on to <code>copyinstr</code>.</li>
+<li>At each point where the kernel changes a process’s user mappings, change the process’s kernel page table in the same way. Such points include <code>fork()</code>, <code>exec()</code>, and <code>sbrk()</code>.</li>
+<li>Don’t forget that to include the first process’s user page table in its kernel page table in <code>userinit</code>.</li>
+<li>What permissions do the PTEs for user addresses need in a process’s kernel page table? (A page with <code>PTE_U</code> set cannot be accessed in kernel mode.)</li>
+<li>Don’t forget about the above-mentioned PLIC limit.</li>
+</ul>
+<p>注意，这里其实就是将用户页表空间的数据映射到内核页表中去，但是需要注意到此时需要保证用户地址空间和内核地址空间不重叠，此时用户地址空间最高不能超过 PLIC 的地址，然后在每次进程地址空间变化的时候将用户空间的页面映射到内核页表即可</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">void</span> <span class="hljs-title function_">map_user_to_kerneladdress</span><span class="hljs-params">(<span class="hljs-type">pagetable_t</span> pagetable, <span class="hljs-type">pagetable_t</span> k_pagetable, uint64 oldsz, uint64 newsz)</span><br>&#123;<br>  <span class="hljs-type">pte_t</span> *pte_from, *pte_to;<br>  uint64 a, pa;<br>  uint flags;<br><br>  <span class="hljs-keyword">if</span> (newsz &lt; oldsz)<br>    <span class="hljs-keyword">return</span>;<br>  <br>  oldsz = PGROUNDUP(oldsz);<br>  <span class="hljs-keyword">for</span> (a = oldsz; a &lt; newsz; a += PGSIZE)<br>  &#123;<br>    <span class="hljs-keyword">if</span> ((pte_from = walk(pagetable, a, <span class="hljs-number">0</span>)) == <span class="hljs-number">0</span>)<br>      panic(<span class="hljs-string">&quot;map_user_to_kerneladdress&quot;</span>);<br>    <span class="hljs-keyword">if</span> ((pte_to = walk(k_pagetable, a, <span class="hljs-number">1</span>)) == <span class="hljs-number">0</span>)<br>      panic(<span class="hljs-string">&quot;map_user_to_kerneladdress&quot;</span>);<br>    pa = PTE2PA(*pte_from);<br>    flags = (PTE_FLAGS(*pte_from) &amp; (~PTE_U)); <span class="hljs-comment">// 注意对 PTE_U 位置的清零</span><br>    *pte_to = PA2PTE(pa) | flags;<br>  &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+
+  
+
+</article>
+
+
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

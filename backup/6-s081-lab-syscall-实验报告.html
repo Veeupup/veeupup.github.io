@@ -1,0 +1,395 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="终于快回家了，快一年没回过家了，真想回去啊  Lab- SystemCall这个实验的内容是给 xv6 增加一些新的系统调用，能够对系统调用的工作原理有更深的理解。 Debug启动两个终端，第一个使用 make qemu-gdb, 在 makefile 中添加 12gdb:    riscv64-unknown-elf-gdb kernel&#x2F;kernel  这行命令帮助我们加载 kernel 文">
+<meta property="og:type" content="website">
+<meta property="og:title" content="6.s081-lab-syscall-实验报告">
+<meta property="og:url" content="http://tanweime.com/backup/6-s081-lab-syscall-%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="终于快回家了，快一年没回过家了，真想回去啊  Lab- SystemCall这个实验的内容是给 xv6 增加一些新的系统调用，能够对系统调用的工作原理有更深的理解。 Debug启动两个终端，第一个使用 make qemu-gdb, 在 makefile 中添加 12gdb:    riscv64-unknown-elf-gdb kernel&#x2F;kernel  这行命令帮助我们加载 kernel 文">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-01-09T07:03:11.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.257Z">
+<meta property="article:author" content="tanwei">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>6.s081-lab-syscall-实验报告 - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 60vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="6.s081-lab-syscall-实验报告"></span>
+          
+        </div>
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      <div class="container nopadding-x-md">
+        <div id="board"
+          >
+          
+          <div class="container">
+            <div class="row">
+              <div class="col-12 col-md-10 m-auto">
+                
+
+<article class="page-content">
+  <blockquote>
+<p>终于快回家了，快一年没回过家了，真想回去啊</p>
+</blockquote>
+<h1 id="Lab-SystemCall"><a href="#Lab-SystemCall" class="headerlink" title="Lab- SystemCall"></a>Lab- SystemCall</h1><p>这个实验的内容是给 xv6 增加一些新的系统调用，能够对系统调用的工作原理有更深的理解。</p>
+<h2 id="Debug"><a href="#Debug" class="headerlink" title="Debug"></a>Debug</h2><p>启动两个终端，第一个使用 <code>make qemu-gdb</code>, 在 makefile 中添加</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sh">gdb:<br>    riscv64-unknown-elf-gdb kernel/kernel<br></code></pre></td></tr></table></figure>
+
+<p>这行命令帮助我们加载 kernel 文件到 gdb 中。然后 macos 上对于 gdbinit 文件会有限制，在 <code>~/.gdbinit</code> 中添加一行 <code>add-auto-load-safe-path &lt;path&gt;/.gdbinit</code> 即可, 这里的 path 替换为自己的工程文件夹。</p>
+<p>如果我们需要加载某个用户态程序，直接 <code>file user/_sleep</code> 先 load symbol 到 gdb 中，然后 <code>break ...</code>, <code>continue</code> 即可。</p>
+<p>一个很有用的 debug 命令, <code>layout</code> 可以在 gdb 源码层面来单步调试, 非常的舒服。</p>
+<h2 id="trap-in-xv6"><a href="#trap-in-xv6" class="headerlink" title="trap in xv6"></a>trap in xv6</h2><p>每个 RISC-V 都有一些专用的寄存器来告诉 CPU 如何处理一个 trap，下面是在 trap 中使用到的最重要寄存器</p>
+<ul>
+<li><code>stvec</code> kernel 把 trap handler 的位置写到这个寄存器，RISC-V 在处理 trap 的时候会跳转到这个寄存器的地址中来</li>
+<li><code>sepc</code> 当从 user space trap 到 kernel space 的时候，RISC-V 将会把 pc 保存到 <code>sepc</code> 中来（因为之后 pc 的值会被 <code>stvec</code> 的值覆盖），<code>sret</code> 指令会把 <code>sepc</code> 的值重新 copy 到 pc 中来。</li>
+<li><code>scause</code> RISC-V 在 trap 中写入一个值，代表当前 trap 的原因</li>
+<li><code>sscratch</code> kernel 在 trap handler 最开始的地方写入一个值</li>
+<li><code>sstatus</code> ：在<code>sstatus</code>中的<code>SIE</code> bit会控制设备的中断是否开启，如果 kernel 清除了 <code>SIE</code>，那么RISC-V 将会 defer 设备的中断直到重新设置 <code>SIE</code> bit。<code>SPP</code> bit 表示 trap 是从 user mode 还是 supervisor mode 中来的。</li>
+</ul>
+<p>注意，这些寄存器都不能在 user mode 下访问。</p>
+<p>下面是一个处理 trap 的流程：</p>
+<ol>
+<li>If the trap is a device interrupt, and the sstatus SIE bit is clear, don’t do any of the following.</li>
+<li>Disable interrupts by clearing SIE.</li>
+<li>Copy the pc to sepc.</li>
+<li>Save the current mode (user or supervisor) in the SPP bit in sstatus.</li>
+<li>Set scause to reflect the trap’s cause.</li>
+<li>Set the mode to supervisor.</li>
+<li>Copy stvec to the pc.</li>
+<li>Start executing at the new pc.</li>
+</ol>
+<p>注意 CPU 并没有切换内核页表，也没有切换到内核中的栈，也没有保存除了 pc 以外的寄存器。</p>
+<h1 id="tracing-syscall"><a href="#tracing-syscall" class="headerlink" title="tracing syscall"></a>tracing syscall</h1><p>这个实验比较简单，主要在于了解在哪些地方涉及到系统调用的修改，这里可以分为 user space 和 kernel space 两个部分的修改，</p>
+<h2 id="user-space"><a href="#user-space" class="headerlink" title="user space"></a>user space</h2><p>在用户空间实验提供了一个 <code>trace.c</code> 来执行 trace 调用调用，但是直接在 makefile 中添加之后，还需要在用户空间使用的 <code>user/user.h</code> 和 <code>user/usys.pl</code> 这两个文件来增加 <code>sys_trace</code> 的系统调用，</p>
+<p><code>user/user.h</code>  添加是为了添加 syscall 在用户空间的函数原型，而  <code>user/usys.pl</code> 是修改 perl 脚本，自动生成一个带有 <code>ecall</code> 的系统调用函数，可以直接从 user space 跳到 kernel space，注意这里系统调用的实现并没有切换页表，xv6 在内核的地址空间和用户的地址空间都有一个相同地址的 <code>trampline.S</code> 的跳板页，可以在切换模式后仍然正常执行。</p>
+<h2 id="kernel-space"><a href="#kernel-space" class="headerlink" title="kernel space"></a>kernel space</h2><p>在 内核空间中  <code>kernel/syscall.h</code> 中添加 <code>sys_trace</code> 的函数原型。</p>
+<p>由于支持 <code>fork()</code> 之后仍然是能够 trace 系统调用，所以需要在 进程的状态中维护一个 <code>trace_mask</code> 变量，在 <code>fork</code> 生成新的进程之后仍然可以正常执行。</p>
+<p>最终，在 <code>syscall() </code> 查表执行对应 trap handler 的时候，根据当前进程是否有 <code>track_mask</code> 来决定是否打印出来一些信息即可：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">static</span> <span class="hljs-type">char</span>* syscall_str [] = &#123;<br>  <span class="hljs-string">&quot;&quot;</span>,<br>  <span class="hljs-string">&quot;fork&quot;</span>,<br>  <span class="hljs-string">&quot;exit&quot;</span>,<br>  <span class="hljs-string">&quot;wait&quot;</span>,<br>  <span class="hljs-string">&quot;pipe&quot;</span>,<br>  <span class="hljs-string">&quot;read&quot;</span>,<br>  <span class="hljs-string">&quot;kill&quot;</span>,<br>  <span class="hljs-string">&quot;exec&quot;</span>,<br>  <span class="hljs-string">&quot;fstat&quot;</span>,<br>  <span class="hljs-string">&quot;chdir&quot;</span>,<br>  <span class="hljs-string">&quot;dup&quot;</span>,<br>  <span class="hljs-string">&quot;getpid&quot;</span>,<br>  <span class="hljs-string">&quot;sbrk&quot;</span>,<br>  <span class="hljs-string">&quot;sleep&quot;</span>,<br>  <span class="hljs-string">&quot;uptime&quot;</span>,<br>  <span class="hljs-string">&quot;open&quot;</span>,<br>  <span class="hljs-string">&quot;write&quot;</span>,<br>  <span class="hljs-string">&quot;mknod&quot;</span>,<br>  <span class="hljs-string">&quot;unlink&quot;</span>,<br>  <span class="hljs-string">&quot;link&quot;</span>,<br>  <span class="hljs-string">&quot;mkdir&quot;</span>,<br>  <span class="hljs-string">&quot;close&quot;</span>,<br>  <span class="hljs-string">&quot;trace&quot;</span>,<br>&#125;;<br><br><span class="hljs-type">void</span><br><span class="hljs-title function_">syscall</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>&#123;<br>  <span class="hljs-type">int</span> num;<br>  <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc</span> *<span class="hljs-title">p</span> =</span> myproc();<br><br>  num = p-&gt;trapframe-&gt;a7;<br>  <span class="hljs-keyword">if</span> (num &gt; <span class="hljs-number">0</span> &amp;&amp; num &lt; NELEM(syscalls) &amp;&amp; syscalls[num]) &#123;<br>    <span class="hljs-type">int</span> res = syscalls[num]();<br>    p-&gt;trapframe-&gt;a0 = res;<br>    <span class="hljs-type">int</span> trace_mask = p-&gt;trace_mask;<br>    <span class="hljs-keyword">if</span> ((<span class="hljs-number">1</span> &lt;&lt; num) &amp; trace_mask) &#123;<br>      <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d: syscall %s -&gt; %d\n&quot;</span>, p-&gt;pid, syscall_str[num], res);<br>    &#125;<br>  &#125;<br>  <span class="hljs-keyword">else</span> &#123;<br>    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d %s: unknown sys call %d\n&quot;</span>,<br>            p-&gt;pid, p-&gt;name, num);<br>    p-&gt;trapframe-&gt;a0 = <span class="hljs-number">-1</span>;<br>  &#125;<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<h1 id="Sysinfo"><a href="#Sysinfo" class="headerlink" title="Sysinfo"></a>Sysinfo</h1><p>这个实验也比较简单，需要我们打印出系统当前的状态，需要看一下内存管理和进程模块，不过都比较简单，比较有价值的是如何从 <code>kernel space</code> 拷贝到 <code>user space</code> 的过程，这里使用到了 <code>copyout</code> 这个函数来做，下面是实现的代码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// sysinfo.c</span><br><span class="hljs-type">int</span><br><span class="hljs-title function_">sys_sysinfo</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>  uint64 addr;<br>  <span class="hljs-keyword">if</span> (argaddr(<span class="hljs-number">0</span>, &amp;addr) &lt; <span class="hljs-number">0</span>)<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;<br><br>  <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">sysinfo</span> <span class="hljs-title">info</span>;</span><br>  info.freemem = freemem();<br>  info.nproc = freeprocs();<br>  <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc</span>* <span class="hljs-title">p</span> =</span> myproc();<br>  <span class="hljs-keyword">if</span> (copyout(p-&gt;pagetable, addr, (<span class="hljs-type">char</span>*)&amp;info, <span class="hljs-keyword">sizeof</span>(info)) &lt; <span class="hljs-number">0</span>)<br>      <span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;<br>  <br>  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br><br><span class="hljs-comment">// kalloc.c</span><br><span class="hljs-type">int</span> <span class="hljs-title function_">freemem</span><span class="hljs-params">()</span><br>&#123;<br>  <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">run</span>* <span class="hljs-title">r</span>;</span><br>  <br>  acquire(&amp;kmem.lock);<br>  r = kmem.freelist;<br>  <span class="hljs-type">int</span> total = <span class="hljs-number">0</span>;<br>  <span class="hljs-keyword">while</span> (r) &#123;<br>    total += PGSIZE;<br>    r = r-&gt;next;<br>  &#125;<br>  release(&amp;kmem.lock);<br><br>  <span class="hljs-keyword">return</span> total;<br>&#125;<br><br><br><span class="hljs-comment">// proc.c</span><br>...<br><span class="hljs-type">int</span><br><span class="hljs-title function_">freeprocs</span><span class="hljs-params">()</span><br>&#123;<br>  <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc</span> *<span class="hljs-title">p</span>;</span><br><br>  <span class="hljs-type">int</span> total = <span class="hljs-number">0</span>;<br>  <span class="hljs-keyword">for</span> (p = proc; p &lt; &amp;proc[NPROC]; p++) &#123;<br>    <span class="hljs-keyword">if</span> (p-&gt;state != UNUSED)<br>      total++;<br>  &#125;<br>  <span class="hljs-keyword">return</span> total;<br>&#125;<br>...<br><br></code></pre></td></tr></table></figure>
+
+<h2 id="copy-from-kernel-space-to-user-space"><a href="#copy-from-kernel-space-to-user-space" class="headerlink" title="copy from kernel space to user space"></a>copy from kernel space to user space</h2><p>可以稍微看下从内核空间拷贝到用户空间的代码，这里是这么做的，</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// Copy from kernel to user.</span><br><span class="hljs-comment">// Copy len bytes from src to virtual address dstva in a given page table.</span><br><span class="hljs-comment">// Return 0 on success, -1 on error.</span><br><span class="hljs-comment">// 注意这里的第二个参数是用户空间的地址，第三个参数是实际需要拷贝的数据所在位置</span><br><span class="hljs-type">int</span><br><span class="hljs-title function_">copyout</span><span class="hljs-params">(<span class="hljs-type">pagetable_t</span> pagetable, uint64 dstva, <span class="hljs-type">char</span> *src, uint64 len)</span><br>&#123;<br>  uint64 n, va0, pa0;<br><br>  <span class="hljs-keyword">while</span>(len &gt; <span class="hljs-number">0</span>)&#123;<br>    va0 = PGROUNDDOWN(dstva);				<span class="hljs-comment">// 向下对齐到 page size，是以 page size 为基础的 copy</span><br>    pa0 = walkaddr(pagetable, va0);	<span class="hljs-comment">// 根据用户空间的页表，找到实际的物理地址</span><br>    <span class="hljs-keyword">if</span>(pa0 == <span class="hljs-number">0</span>)<br>      <span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;<br>    n = PGSIZE - (dstva - va0);		<span class="hljs-comment">// 当前页面从 dstva 到剩余的地址空间的大小</span><br>    <span class="hljs-keyword">if</span>(n &gt; len)	<span class="hljs-comment">// 如果当前这个 page 的大小小于 len，那么就以更小的 len 为准了，不能拷贝多了</span><br>      n = len;<br>    memmove((<span class="hljs-type">void</span> *)(pa0 + (dstva - va0)), src, n);<br><br>    len -= n;	<span class="hljs-comment">// 如果当前页面只靠 copy 了部分内容，那么需要接着下一个页面继续 copy</span><br>    src += n;<br>    dstva = va0 + PGSIZE;<br>  &#125;<br>  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h1 id="感受"><a href="#感受" class="headerlink" title="感受"></a>感受</h1><p>重新做了一下 syscall，感觉还是很舒服，继续加油，冲哇！</p>
+
+
+  
+
+</article>
+
+
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

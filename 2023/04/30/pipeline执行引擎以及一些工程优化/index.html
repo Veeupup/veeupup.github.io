@@ -1,0 +1,869 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="基础概念简单介绍pipeline 是一种执行引擎模型，是通过将复杂的计算链路拆分成多个小部分，通过各种手段来执行 pipeline 中的任务完成高效率的计算。  在 Morsel, Clickhouse, Databend, Datafusion, DuckDB 中对于 pipeline 都有不同程度的实现  pipeline 本质上就是将计算任务抽象成一个 DAG，然后将每个节点抽象为一个 TA">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pipeline执行引擎以及一些工程优化">
+<meta property="og:url" content="http://tanweime.com/2023/04/30/pipeline%E6%89%A7%E8%A1%8C%E5%BC%95%E6%93%8E%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%B7%A5%E7%A8%8B%E4%BC%98%E5%8C%96/index.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="基础概念简单介绍pipeline 是一种执行引擎模型，是通过将复杂的计算链路拆分成多个小部分，通过各种手段来执行 pipeline 中的任务完成高效率的计算。  在 Morsel, Clickhouse, Databend, Datafusion, DuckDB 中对于 pipeline 都有不同程度的实现  pipeline 本质上就是将计算任务抽象成一个 DAG，然后将每个节点抽象为一个 TA">
+<meta property="og:locale">
+<meta property="og:image" content="http://tanweime.com/image-20230310224134113.png">
+<meta property="og:image" content="http://tanweime.com/MonetDBx100.png">
+<meta property="article:published_time" content="2023-04-30T07:13:04.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.251Z">
+<meta property="article:author" content="tanwei">
+<meta property="article:tag" content="数据仓库">
+<meta property="article:tag" content="执行引擎">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/image-20230310224134113.png">
+  
+  
+  
+  <title>pipeline执行引擎以及一些工程优化 - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="pipeline执行引擎以及一些工程优化"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-04-30 15:13" pubdate>
+          April 30, 2023 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          9 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">pipeline执行引擎以及一些工程优化</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="基础概念"><a href="#基础概念" class="headerlink" title="基础概念"></a>基础概念</h1><h2 id="简单介绍"><a href="#简单介绍" class="headerlink" title="简单介绍"></a>简单介绍</h2><p>pipeline 是一种<strong>执行引擎模型</strong>，是通过将复杂的计算链路拆分成多个小部分，通过各种手段来执行 pipeline 中的任务完成高效率的计算。</p>
+<blockquote>
+<p>在 Morsel, Clickhouse, Databend, Datafusion, DuckDB 中对于 pipeline 都有不同程度的实现</p>
+</blockquote>
+<p>pipeline 本质上就是将计算任务抽象成一个 DAG，然后将每个节点抽象为一个 TASK，pipeline 将完成任务之间的调度执行顺序和数据传输。</p>
+<p>下图描述了 clickhouse 中的 pipeline 如何 pipeline 的抽象的：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://presentations.clickhouse.com/meetup24/5.%20Clickhouse%20query%20execution%20pipeline%20changes/#parallel-execution">来源 Clickhouse Presentation meetup24</a></p>
+</blockquote>
+<p><img src="/image-20230310224134113.png" srcset="/img/loading.gif" lazyload alt="image-20230310224134113"></p>
+<p>图中表示了一个计算任务之间的有向无环图，也就是一个 pipeline </p>
+<p>整个计算链路串起来叫做 pipeline，图中的每个方框内的算子叫做 processor，可以来处理一个计算任务，Ports 代表 processor 之间的数据连接。</p>
+<p>注意每个 processor 都可以有一个或者多个 input ，可以有一个或者多个输出，也就是 pipeline 的变换是非常灵活的，可以 1 -&gt; 1, N -&gt; 1, 1 -&gt; N。</p>
+<p>这里介绍图中没有的另一个概念：pipeline breaker，所谓 pipeline breaker 就是在多个 pipeline 的执行的时候不能顺畅的执行下去，需要等这个同步的点执行完毕才能继续执行。</p>
+<p>例如一个 hash join 的 build hashtable 阶段，就是一个 pipeline breaker，下面的 pipe2 需要等待 pipe1 的 build hashtable 结束之后才能开始 probe 阶段，就阻碍的 pipe2 的继续执行</p>
+<figure class="highlight xl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs xl"><span class="hljs-function"><span class="hljs-title">pipe1</span>: source1 -&gt;</span> <span class="hljs-function"><span class="hljs-title">project</span> -&gt;</span> <span class="hljs-function"><span class="hljs-title">build</span> hashtable -&gt;</span><br>  												-&gt;<br>  													-&gt;			---&gt; transform1<br><span class="hljs-function"><span class="hljs-title">pipe2</span>: source2 -&gt;</span> <span class="hljs-function"><span class="hljs-title">project</span>  ----------------------------&gt;</span> <span class="hljs-function"><span class="hljs-title">probe</span>  ---&gt;</span> transform2<br>																---&gt; transform3<br></code></pre></td></tr></table></figure>
+
+<h2 id="如何更快的进行执行计算任务"><a href="#如何更快的进行执行计算任务" class="headerlink" title="如何更快的进行执行计算任务"></a>如何更快的进行执行计算任务</h2><p>这是一个很大的问题，这里总结一下在计算任务中提高执行计算效率的一些方法：</p>
+<p>要注意要提高计算性能，借用 Andy 课中的总结，核心就是三个点：</p>
+<ol>
+<li>减少指令数量<ol>
+<li>向量化，每条指令处理更多数据</li>
+<li>……</li>
+</ol>
+</li>
+<li>减少每条指令的平均 cycle<ol>
+<li>branchless, make cpu pipeline prediction happy</li>
+<li>……</li>
+</ol>
+</li>
+<li>并行执行<ol>
+<li>将执行<strong>水平切分</strong>，<strong>竖直切分</strong></li>
+</ol>
+</li>
+</ol>
+<p>本文不详细展开了，每个点展开又是一个很大的话题。就是要<strong>让CPU一直转起来，而且要转在更有效率的地方</strong>，而不是画这个时间在调度，function call，memory access上面。</p>
+<p>而一个好的调度程序就是能够通过上面的三种方式来提高执行效率</p>
+<ul>
+<li>1: 通过调度尽可能减少 function call 的指令以及额外的调度</li>
+<li>2: 通过 Numa-aware 的方式减少 memory access 的 cycle</li>
+<li>3: 通过并行手段将完整的计算任务水平与竖直进行切分提高效率</li>
+</ul>
+<h2 id="和-volcano-执行模型的对比"><a href="#和-volcano-执行模型的对比" class="headerlink" title="和 volcano 执行模型的对比"></a>和 volcano 执行模型的对比</h2><p>不同于传统的 valcano 的执行引擎，最大的不同就是 pipeline 具有<strong>显式的计算控制流程</strong>（也就是实现了手动调度任务），而 volcano 执行引擎是通过函数调用来实现隐式的计算控制流。</p>
+<blockquote>
+<p><strong><a target="_blank" rel="noopener" href="https://github.com/alexey-milovidov">alexey-milovidov</a></strong> ：The main difference is that volcano has implicit control flow (calculations are controlled by function call stack) and pipeline has explicit control flow (there is query execution graph and external scheduler can select what computation blocks to run in what threads).</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/issues/34045">https://github.com/ClickHouse/ClickHouse/issues/34045</a></p>
+</blockquote>
+<h1 id="一些工程优化"><a href="#一些工程优化" class="headerlink" title="一些工程优化"></a>一些工程优化</h1><p>由于 pipeline 的本质概念上比较简单，工程上有很多可以优化的点</p>
+<h2 id="batch-execution"><a href="#batch-execution" class="headerlink" title="batch-execution"></a>batch-execution</h2><p> 一个前提：注意这里的 pipeline 执行一般都是以 batch 为单位执行的，和 row-oriented 的执行引擎对比来说</p>
+<p>execution row by row:</p>
+<ul>
+<li>simple</li>
+<li>High overhead</li>
+</ul>
+<p>Batch execution:</p>
+<ul>
+<li>small overhead (control overhead)<ul>
+<li>以 MonetDB 论文中的数据说明，MySQL 真正用于计算的只小于 10% 的时间，更多的时间花在了各种不同的</li>
+<li><img src="/MonetDBx100.png" srcset="/img/loading.gif" lazyload alt="image-20230310215338663"></li>
+</ul>
+</li>
+<li>vectorized execution</li>
+<li>greater memory consumption</li>
+</ul>
+<h3 id="explict-schedule"><a href="#explict-schedule" class="headerlink" title="explict schedule"></a>explict schedule</h3><p>总的来说，pipeline 将一个大的计算流程表示为一个 <strong>DAG 有向无环图</strong>，图中的每个节点转化为作为 pipeline 计算中的一个个的 task 或者叫 processor, 每个 processor 只负责其中的一个子任务，然后将这些 processor 逻辑上连接起来，所以<strong>如何调度这个 DAG 的执行是影响执行效率很大的一个因素</strong>。</p>
+<ul>
+<li>最朴素的实现里面可以直接将每个 task 抽象出来放到一个线程池里面去跑 或者是 thread per prossor，<strong>不做任何显式或者隐式的调度</strong>，任务之间既不 pull 也不 push，轮到谁跑谁就尝试去跑，如果发现不能继续就 yield，然后尝试，每个线程不断轮询 DAG 中的任务，哪个能够执行就去执行，直到最终 task queue 中没有任务即可停止。<ul>
+<li>优点：实现简单</li>
+<li>缺点：OS or 线程池不知道任务之间的依赖关系，可能产生非常多的调度开销，而且不利于做后续的 numa-aware 优化</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>在 Rust 中也有不少用异步的实现直接把任务丢到 tokio 中去跑，让 tokio 来做调度</p>
+</blockquote>
+<ul>
+<li>另一种方法可以采用 pull-based schedule，同样也放到 线程池中去跑，只不过这个时候的调度顺序从下游节点向上游节点发起，也是隐式的调度（通过 function call）<ul>
+<li>优点：<ul>
+<li>实现简单</li>
+<li>容易可以做一些算子的下推：例如 limit 算子</li>
+</ul>
+</li>
+<li>缺点：<ul>
+<li>仍然有不少的调度开销</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>效率比较高的一种调度就是 push-based schedule，由 bottom-to-top 的执行，上游节点执行完毕就通知相邻的下游 processor 执行，把下游节点放到 task queue 中去，这个时候用于调度的时间会更少，真正执行的时间占比会更高<ul>
+<li>优点：<ul>
+<li>减少非常多无用的调度开销</li>
+<li>以数据为中心计算，刚才算子计算的数据仍然在 cpu cahce 中，效率更高<ul>
+<li>所以很多最开始水平切分最小的 batch 的时候尽可能和 CPU cache 大小相等，这样 cache miss 更少</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>缺点：<ul>
+<li>实现稍微复杂一些</li>
+<li>不容易做一些算子的下推</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>还有一种方式就是用一个显式的 watchdog &#x2F; scheduler 线程来调度，这个线程不做执行，专门来做调度，哪个算子能够执行，应该去哪个线程执行（线程和哪个 CPU 更亲和），都能够安排的明明白白的<ul>
+<li>优点：<ul>
+<li>更精细化的调度，对于各种计算中的 skew（例如一条 pipeline 中的 task 非常重，另一个空闲下来可以将任务调度过去） 能够做非常好的 schedule</li>
+<li>可以对于执行有全局视角，更容易做优化</li>
+</ul>
+</li>
+<li>缺点：<ul>
+<li>额外的调度 overhead</li>
+<li>实现更复杂一点</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="parallel-execution"><a href="#parallel-execution" class="headerlink" title="parallel execution"></a>parallel execution</h2><p>提升执行效率另一个非常重要的点就是并行，在 pipeline 里面的并行分成两个方面的并行：</p>
+<ul>
+<li><p>水平方向</p>
+<ul>
+<li>这里通常指将一个完整的 range 的数据水平切几刀，然后分成多个 pipeline 去执行这一小部分数据，最终再聚合起来，类似 map reduce，每个 pipeline 只有一部分数据</li>
+</ul>
+</li>
+<li><p>竖直方向</p>
+<ul>
+<li><p>用前面 ck 的图举例，对于一个很长的 pipeline，可以同时执行一条 pipeline 上的多个算子，例如</p>
+</li>
+<li><pre><code class="hljs">source1 -&gt; transform1 -&gt; transform2 -&gt; transform3 -&gt; ...
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs perl"><br>    可以同时执行一条 <span class="hljs-keyword">pipe</span> 上的 source1 算子和 transform2 算子，这就是所谓的竖直方向的并行<br><br><span class="hljs-comment">## NUMA-aware (data centric)</span><br><br>在现代的多核CPU架构中，由于 NUMA 架构的特点，不同CPU访问不同内存区域的速率有比较大的差异（通过 CPU <span class="hljs-keyword">socket</span> 传输数据）。<br><br>所以希望能够尽可能以数据为中心，将针对同一条 pipeline 中的多个算子的都调度到同一个 CPU 上执行（CPU 亲和性），这样同一条 pipeline 上的多个算子所实际运行的 thread 都尽可能在同一个 CPU 上执行，所访问的数据也都在这部分 CPU 更近的内存中，会有更高执行效率。<br><br><span class="hljs-comment">## work-stealing / delay scheduling </span><br><br>在 Pipeline 执行的时候，每个 <span class="hljs-keyword">pipe</span> 中的任务执行上可能出现各种情形的 skew，虽然在 pipeline 开始水平切分的时候尽可能将数据进行了平均切分，但是通过每个算子之后，剩余的数据可能不同，例如通过一个 filter 算子之后，pipeline 中的两个 <span class="hljs-keyword">pipe</span> 之间的数据出现了极度不均衡，例如下面这种情况，第一个 <span class="hljs-keyword">pipe</span> 的 filter 之后只有 <span class="hljs-number">1</span>% 的数据，那么很快这个<span class="hljs-keyword">pipe</span> 就计算完毕了。<br><br></code></pre></td></tr></table></figure>
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<p>pipe1: source1 -&gt; filter – selectity: 1% —&gt; transform2 -&gt; </p>
+<p>pipe2: source2 -&gt; filter – selectity: 99% —&gt; transform2 -&gt; </p>
+<p>pipe3:  source3 -&gt; filter – selectity: 50% —&gt; transform2 -&gt; </p>
+<p>…</p>
+<pre><code class="hljs">
+在这种情况下，pipe1 就可以尝试 steal pipe3 中的 task queue 中的任务来执行，不让每个 CPU 闲置，提高 CPU 的利用率。
+
+working stealing 的一个简单优化是 delay scheduling：有的时候并不需要立即去执行 working stealing，而是稍微等待一会，再去尝试拿任务，这种方式在工程实践上被证明是非常有效的，因为有的时候可能隔壁的 CPU 只是稍微慢了那么一点点，多等一下等ok了。
+
+但是这个方式也不是绝对的，有的时候，work stealing 机制也会带来副作用，例如在 SAP HANA 中，他们提出，他们使用的机器有 256 nodes，这个时候 work stealing 反而会降低效率，因为需要从跨 numa 的 cpu socket 去更远的内存中拿到数据，work stealing 得不偿失。 
+
+## complication
+
+编译执行，在不少高性能的 AP 中有实现，例如：MS hekaton，sqlite，presto，pelton 等，实现的方式也是有多种：
+
+* 手动改写成 C/C++ or 某种 DSL
+*  JVM-based JIT
+* LLVM-based
+
+在 pipeline 中，当可以将任务表达成一个 DAG 之后，就可以编译生成机器代码执行，不再做显式的解释执行调度了。编译执行的效果很好，但是实现起来也通常比解释执行更加困难。
+
+# 一个 naive 的实现
+
+说了这么多，还没有介绍 pipeline 具体的实现是怎样的，在工业实践中，比较好的实现有
+
+* [Clickhouse](https://github.com/ClickHouse/ClickHouse/tree/c2611c3ba940cedf7ddc225e805e45fd77c59977/src/QueryPipeline) ，[databend](https://github.com/datafuselabs/databend/tree/main/src/query/pipeline) ，[datafusion](https://github.com/apache/arrow-datafusion/tree/ac5676f74bfac89707642f9221d35899b7c2c321/datafusion/core/src/scheduler/pipeline)，[DuckDB](https://github.com/duckdb/duckdb/tree/88b1bfa74d2b79a51ffc4bab18ddeb6a034652f1/src/parallel)
+
+感兴趣的读者可以自己阅读这些 pipeline 的实现。
+
+我自己也简单实现一个的版本来学习 pipeline，并没有实现太多先进的特性，只是出于学习理解的目的实现一个基础的版本：https://github.com/Veeupup/naive-pipeline-execution
+
+# 相关资料
+
+* [MonetDB/X100: Hyper-Pipelining Query Execution](https://www.cidrdb.org/cidr2005/papers/P19.pdf)
+
+* [Morsel-Driven Parallelism: A NUMA-Aware Query Evaluation Framework for the Many-Core Age](https://15721.courses.cs.cmu.edu/spring2019/papers/14-scheduling/p743-leis.pdf)
+
+* [ClickHouse Query Execution Pipeline PPT](https://presentations.clickhouse.com/meetup24/5.%20Clickhouse%20query%20execution%20pipeline%20changes/)
+
+  * [bilibili 搬运对应的演讲]( https://www.bilibili.com/video/BV147411U7A3/?vd_source=2be11642e5a095e9c7f08f3b64cc4b1a)
+
+  * [Clickhouse CTO Alexey 解释 pipeline](https://github.com/ClickHouse/ClickHouse/issues/34045)
+
+* [By 虎哥 ClickHouse和他的朋友们（4）Pipeline处理器和调度器](https://bohutang.me/2020/06/11/clickhouse-and-friends-processor/)
+
+* [# ClickHouse 源码学习之Pipeline执行引擎](https://zhuanlan.zhihu.com/p/401658490) \
+
+* [[OLAP 任务的并发执行与调度](https://io-meter.com/2020/01/04/olap-distributed/)](https://io-meter.com/2020/01/04/olap-distributed/)
+</code></pre>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/database/" class="category-chain-item">database</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/" class="print-no-link">#数据仓库</a>
+      
+        <a href="/tags/%E6%89%A7%E8%A1%8C%E5%BC%95%E6%93%8E/" class="print-no-link">#执行引擎</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>pipeline执行引擎以及一些工程优化</div>
+      <div>http://tanweime.com/2023/04/30/pipeline执行引擎以及一些工程优化/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>tanwei</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>April 30, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/04/30/Photon/" title="Databricks Photon | Native C++ Query Engine for Lakehouse Systems">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Databricks Photon | Native C++ Query Engine for Lakehouse Systems</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/04/30/Dremel/" title="Dremel | A Decade of Interactive SQL Analysis at Web Scale">
+                        <span class="hidden-mobile">Dremel | A Decade of Interactive SQL Analysis at Web Scale</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: '7627f2831046b4de03bca2029d0a8cbe'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

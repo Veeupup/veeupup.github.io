@@ -1,0 +1,912 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Historygoogle 内部有很多 Data Systems，每当 google 发布了他们系统的论文之后总会出现外部的一些开源版本，因为大家都认为 google 很成功， NoSQL：  MapReduce, 2004 -&gt; Hadoop, Spark BigTable, 2005 -&gt; HBase, Accumulo, Hypertable Chubby, 2006 -&gt;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dremel | A Decade of Interactive SQL Analysis at Web Scale">
+<meta property="og:url" content="http://tanweime.com/2023/04/30/Dremel/index.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="Historygoogle 内部有很多 Data Systems，每当 google 发布了他们系统的论文之后总会出现外部的一些开源版本，因为大家都认为 google 很成功， NoSQL：  MapReduce, 2004 -&gt; Hadoop, Spark BigTable, 2005 -&gt; HBase, Accumulo, Hypertable Chubby, 2006 -&gt;">
+<meta property="og:locale">
+<meta property="og:image" content="http://tanweime.com/dremel_query_exec.png">
+<meta property="og:image" content="http://tanweime.com/dremel_shuffle_pic.png">
+<meta property="og:image" content="http://tanweime.com/dremel_repartition.png">
+<meta property="og:image" content="http://tanweime.com/dremel_columnar_format.png">
+<meta property="og:image" content="http://tanweime.com/dremel_shuffle_based_execution.png">
+<meta property="article:published_time" content="2023-04-30T06:29:05.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.216Z">
+<meta property="article:author" content="tanwei">
+<meta property="article:tag" content="数据仓库">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/dremel_query_exec.png">
+  
+  
+  
+  <title>Dremel | A Decade of Interactive SQL Analysis at Web Scale - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Dremel | A Decade of Interactive SQL Analysis at Web Scale"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-04-30 14:29" pubdate>
+          April 30, 2023 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          5.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          16 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Dremel | A Decade of Interactive SQL Analysis at Web Scale</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="History"><a href="#History" class="headerlink" title="History"></a>History</h1><p>google 内部有很多 Data Systems，每当 google 发布了他们系统的论文之后总会出现外部的一些开源版本，因为大家都认为 google 很成功，</p>
+<p>NoSQL：</p>
+<ul>
+<li>MapReduce, 2004 -&gt; Hadoop, Spark</li>
+<li>BigTable, 2005 -&gt; HBase, Accumulo, Hypertable</li>
+<li>Chubby, 2006 -&gt; Zookeeper, etcd</li>
+</ul>
+<p>SQL:</p>
+<ul>
+<li>Megastore, 2010</li>
+<li>Vitness, 2010 -&gt; Vitness, Planetscale</li>
+<li>Dremel, 2011 -&gt; Drill, Impala, Dremio</li>
+<li>Spanner, 2011 -&gt; CockroachDB, TiDB</li>
+<li>F1, 2013</li>
+<li>Mesa, 2014</li>
+<li>Napa, 2021</li>
+</ul>
+<h1 id="Architecture"><a href="#Architecture" class="headerlink" title="Architecture"></a>Architecture</h1><p>最初在2006年作为一个 side-project 开发，用于分析从其他工具生成的数据文件。</p>
+<ul>
+<li><p>“interactive”目标意味着他们希望支持对原位数据文件进行即席查询。</p>
+</li>
+<li><p>第一版不支持 Join 操作。</p>
+</li>
+</ul>
+<p>在2010年代后期重写为基于GFS的共享磁盘架构。</p>
+<p>2012年发布为公共商业产品（BigQuery）。</p>
+<h2 id="In-SITU-Data-Processing"><a href="#In-SITU-Data-Processing" class="headerlink" title="In-SITU Data Processing"></a>In-SITU Data Processing</h2><p>在共享存储（例如对象存储）中执行对数据文件的查询，以其原始格式进行操作，而无需首先将其 Ingest 到DBMS（即托管存储）中。</p>
+<ul>
+<li>这就是人们通常所说的 Data lake。</li>
+<li>data lakehouse 是位于所有这些之上的DBMS。</li>
+</ul>
+<p>目标是减少开始分析数据所需的准备时间。</p>
+<ul>
+<li>用户愿意牺牲查询性能来避免重新编码&#x2F;加载数据文件。</li>
+</ul>
+<h2 id="一些特性"><a href="#一些特性" class="headerlink" title="一些特性"></a>一些特性</h2><ul>
+<li>Shared-Disk &#x2F; Disaggregated Storage</li>
+<li>Vectorized Query Processing</li>
+<li>Shuffle-based Distributed Query Execution</li>
+<li>Columnar Storage<ul>
+<li>Zone Maps &#x2F; Filters</li>
+<li>Dictionary + RLE Compression</li>
+<li>Only Inverted Indexes</li>
+</ul>
+</li>
+<li>Hash Joins Only</li>
+<li>Heuristic Optimizer + Adaptive Optimizations</li>
+</ul>
+<h2 id="Query-Execution"><a href="#Query-Execution" class="headerlink" title="Query Execution"></a>Query Execution</h2><p>DBMS将逻辑计划转换为包含多个并行任务的 stage（pipelines）。</p>
+<ul>
+<li>每个任务必须是确定性和幂等的，以支持重新启动。</li>
+</ul>
+<p>根节点（协调器）检索批处理中目标文件的所有元数据，然后将其嵌入查询计划中。</p>
+<ul>
+<li>避免了数千个工作进程同时访问分布式文件系统获取元数据。避免对 GFS 的压力太大</li>
+<li>后面也提到可以通过合并成大文件来减少小文件的碎片</li>
+</ul>
+<p><img src="/./dremel_query_exec.png" srcset="/img/loading.gif" lazyload alt="image-20230430130519564"></p>
+<h1 id="Shuffle"><a href="#Shuffle" class="headerlink" title="Shuffle"></a>Shuffle</h1><p>使用专用的节点从每个阶段传输中间结果的生产者&#x2F;消费者模型。</p>
+<ul>
+<li>工作节点将输出发送到 shuffle  节点。</li>
+<li>shuffle  节点在内存中以哈希分区方式存储数据。</li>
+<li>下一阶段的工作节点从 shuffle  节点检索其输入。</li>
+</ul>
+<p>如果需要， shuffle  节点会将此数据存储在内存中，并仅溢出到磁盘存储。</p>
+<p><img src="/./dremel_shuffle_pic.png" srcset="/img/loading.gif" lazyload alt="image-20230430130653795"></p>
+<p> shuffle  阶段代表查询生命周期中的检查点，协调器确保所有任务都已完成。</p>
+<p><strong>Fault Tolerance &#x2F; Straggler Avoidance</strong>：</p>
+<ul>
+<li>如果一个工作节点在DDL内没有生成任务结果，则协调器会推测性地执行冗余任务。</li>
+</ul>
+<p><strong>Dynamic Resource Allocation</strong>：</p>
+<ul>
+<li>根据阶段输出的大小，扩大&#x2F;缩小下一阶段的工作节点数量。</li>
+</ul>
+<h1 id="Query-Optimization"><a href="#Query-Optimization" class="headerlink" title="Query Optimization"></a>Query Optimization</h1><p>我们讨论了查询优化器如何依赖从数据中提取的统计信息导出的成本模型。但是如果没有统计信息，DBMS如何优化查询呢？</p>
+<ul>
+<li><p>DBMS从未见过的数据文件。</p>
+</li>
+<li><p>来自其他DBMS（Connector）的查询API。</p>
+</li>
+</ul>
+<p>Dremel的优化器采用分层方法，使用基于规则和成本的优化器传递来生成初步物理计划以开始执行。</p>
+<ul>
+<li>谓词下推、星型模式约束传播、主&#x2F;外键提示、连接顺序等规则。</li>
+<li>成本优化仅针对DBMS具有统计信息可用（例如，物化视图）的数据进行。</li>
+</ul>
+<p>为避免坏成本模型估算带来的问题，Dremel使用动态查询优化</p>
+<h2 id="Dynamic-QUERY-OPTIMIZATION"><a href="#Dynamic-QUERY-OPTIMIZATION" class="headerlink" title="Dynamic QUERY OPTIMIZATION"></a>Dynamic QUERY OPTIMIZATION</h2><p>Dremel在阶段开始之前根据前一阶段的观察结果更改查询计划。</p>
+<ul>
+<li>避免优化器使用不准确（或不存在）的数据统计信息做出决策的问题。</li>
+</ul>
+<p>优化示例：</p>
+<ul>
+<li>更改 stages 中 work nodes 的数量。</li>
+<li>在Shuffle和Broadcast Join之间切换。</li>
+<li>更改物理运算符实现方式。</li>
+<li>Dynamic repartitioning。</li>
+</ul>
+<h2 id="Dynamic-Repartition"><a href="#Dynamic-Repartition" class="headerlink" title="Dynamic Repartition"></a>Dynamic Repartition</h2><p>Dremel动态负载平衡并调整中间结果分区以适应 data skew。DBMS检测到 shuffle  分区过于满时，然后指示工作人员调整其 partition 方案。</p>
+<p><img src="/./dremel_repartition.png" srcset="/img/loading.gif" lazyload alt="image-20230430131202943"></p>
+<h1 id="Storage-Format"><a href="#Storage-Format" class="headerlink" title="Storage Format"></a>Storage Format</h1><p>DBMS依赖于Google的分布式文件系统（Colossus）来扩展存储容量。</p>
+<p>依赖于Capacitor的列编码方案，用于嵌套关系和半结构化数据。</p>
+<ul>
+<li>可以将其视为没有速度缓慢问题的JSON &#x2F; YAML。</li>
+<li>Capacitor还提供了具有基本过滤功能的访问库，embedd 的一个 mini SQL 处理器，可以做一些 filter。</li>
+<li>类似于Parquet vs. Orc格式。</li>
+</ul>
+<p>重复和定义字段嵌入在列中，以避免检索&#x2F;访问祖先属性。</p>
+<p><img src="/./dremel_columnar_format.png" srcset="/img/loading.gif" lazyload alt="image-20230430123814485"></p>
+<blockquote>
+<p>可以看这篇文章了解具体的结构：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.kancloud.cn/digest/in-memory-computing/202157">https://www.kancloud.cn/digest/in-memory-computing/202157</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.kancloud.cn/digest/in-memory-computing/202158">https://www.kancloud.cn/digest/in-memory-computing/202158</a></li>
+</ul>
+</blockquote>
+<h2 id="SCHEMA-REPRESENTATION"><a href="#SCHEMA-REPRESENTATION" class="headerlink" title="SCHEMA REPRESENTATION"></a>SCHEMA REPRESENTATION</h2><p>Dremel的内部存储格式是自描述的</p>
+<ul>
+<li>数据库管理系统需要理解文件中包含什么，所有信息都在文件中。</li>
+</ul>
+<p>但是每当DBMS想要读取一个文件时，它必须解析该文件的嵌入式模式。</p>
+<ul>
+<li>表可以有数千个属性。大多数查询只需要属性子集。</li>
+</ul>
+<p>DBMS以列格式存储模式，以减少检索元数据时的开销</p>
+<h1 id="SQL"><a href="#SQL" class="headerlink" title="SQL"></a>SQL</h1><p>在2010年代初期，谷歌内部的许多DBMS项目都有自己的SQL方言。GoogleSQL项目统一了这些冗余的努力，构建了数据模型、类型系统、语法、语义和函数库。开源版本：ZetaSQL。</p>
+<p>使用这些 SQL 的项目有 cloud spanner 等。</p>
+<blockquote>
+<p>The conventional wisdom at Google was “SQL doesn’t scale”, and with a few exceptions, Google had moved away from SQL almost completely. In solving for scalability, we had given up ease of use and ability to iterate quickly.</p>
+<p>Dremel was one of the first systems to reintroduce SQL for Big Data analysis.Dremel made it possible for the first time to write a simple SQL query to analyze web-scale datasets. Analysis jobs that took hours to write, build, debug, and execute could now be written in minutes and executed in seconds, end-to-end, allowing users to interactively write, refine and iterate on queries. This was a paradigm shift for data analysis. The ability to interactively and declaratively analyze huge datasets, ad hoc, in dashboards, and in other tools, unlocked the insights buried inside huge datasets, which was a key enabler for many successful products over the next decade</p>
+<p>Dremel 开始重新拥抱 SQL 的怀抱并且统一了 Google 的 SQL 前端。</p>
+</blockquote>
+<h1 id="Serverless-Computing"><a href="#Serverless-Computing" class="headerlink" title="Serverless Computing"></a>Serverless Computing</h1><p>Dremel是提供弹性、多租户和按需服务的先驱之一，现在被广泛称为无服务器。</p>
+<blockquote>
+<p>感觉 Snowflake 相似的云数仓都学习了 Dremel 的这种思想</p>
+</blockquote>
+<h2 id="Serverless-roots"><a href="#Serverless-roots" class="headerlink" title="Serverless roots"></a>Serverless roots</h2><p>大多数数据仓库（如IBM Netezza、Teradata和Oracle产品）在Dremel概念形成之时部署在专用服务器上，主要遵循数据库管理系统的模式。MapReduce和Hadoop等大数据框架采用了更灵活的部署模式，利用虚拟机和容器，但仍需要单租户资源配置即每个用户一个作业。</p>
+<p>显然，在Google支持交互式低延迟查询和现场分析，并同时扩展到数千个内部用户且成本较低的情况下，只有通过提供按需资源配置的多租户服务才能实现。最初我们利用三个核心思想来实现无服务器分析：</p>
+<ol>
+<li><p>解耦：解耦计算、存储和内存允许按需缩放并独立共享计算而不受存储影响。因此它可以以更低的成本适应使用情况。正如第3节所述，Dremel从2009年开始将磁盘存储与计算资源解耦，并于2014年最终添加了解耦内存。</p>
+</li>
+<li><p>容错性和可重启性：Dremel查询执行是基于底层计算资源可能缓慢或不可用这一假设构建的，使得工作者固有地不可靠。这种假设对查询运行时和调度逻辑有着强烈的影响：</p>
+<ul>
+<li>查询中的每个子任务必须是确定性和可重复的，以便在失败时只需重新启动另一个工作者上的一小部分工作。</li>
+<li>查询任务调度程序必须支持将多个相同任务副本分派到其他不响应的工作者上。</li>
+</ul>
+</li>
+</ol>
+<p>因此，这些机制使得调度逻辑可以轻松地通过取消和重新安排子任务来调整为查询分配的资源量。</p>
+<ol start="3">
+<li>虚拟调度单元：Dremel调度逻辑设计为使用称为插槽（slots） 的计算和内存抽象单位而不是依赖于特定类型和形状的机器。这对容器导向Borg计算环境是一个很好匹配模型，该环境支持灵活资源配置形状。这些虚拟调度单元允许解耦服务部署、容器和机器形状以及客户可见资源配置与其之间关系，并继续成为BigQuery中资源管理核心客户可见概念。</li>
+</ol>
+<p>原始Dremel论文中采用了这三种思想，在许多无服务器数据分析系统中成为构建块。行业和学术界广泛采用了解耦技术。Snowflake等其他提供商也采用了虚拟资源单元。在许多领域，行业已经趋于数据湖架构，使用弹性计算服务“按需”分析云存储中的数据。此外，许多数据仓库服务（如Presto、AWS Athena和Snowflake）也采用了按需分析或自动缩放作为无服务器分析的关键因素，导致许多企业选择云而不是本地系统。</p>
+<h2 id="5-2-Evolution-of-serverless-architecture"><a href="#5-2-Evolution-of-serverless-architecture" class="headerlink" title="5.2 Evolution of serverless architecture"></a>5.2 <strong>Evolution of serverless architecture</strong></h2><p>Dremel继续发展其无服务器能力，使它们成为Google BigQuery的关键特征之一。原始Dremel论文中的一些方法演变成了下面描述的新思想，将无服务器方法提升到了一个新水平。</p>
+<ul>
+<li><p><em>Centralized Scheduling</em>。2012年，Dremel转向集中式调度，这允许更精细的资源分配，并开放了预留功能，即为特定客户分配Dremel处理能力的一部分。 集中式调度取代了原始论文中负责在中间服务器之间分配资源的“dispatcher”。 新调度程序使用整个群集状态来进行调度决策，从而实现更好地利用和隔离。</p>
+</li>
+<li><p>*Shufflfle Persistence Layer.*。在2010年论文发表后引入了Shuffle和分布式连接功能。 在最初的 shuffle 实现之后，架构演变为允许解耦查询不同阶段的调度和执行。 使用 shuffle 结果作为查询执行状态检查点时，调度程序具有动态抢占 work node  以减少资源配置以适应计算资源受限时其他工作负载需求等灵活性。</p>
+</li>
+<li><p>*Flexible Execution DAGs.*。原始论文描述了图3所示系统架构。 固定执行树对于聚合运算效果良好，但随着Dremel的发展，固定树对于更复杂的查询计划并不理想。 通过迁移到集中式调度和Shuffle持久层，架构以以下方式改变：</p>
+<ul>
+<li><p>查询协调器是接收查询的第一个节点。它构建查询计划，可以是查询执行树（也称为阶段）的DAG，并使用由调度程序提供给它的 work node  编排查询执行。</p>
+</li>
+<li><p>work node  被分配为没有预定义结构的池。一旦协调员决定执行DAG形状，就会向 work node  发送准备好执行本地查询执行计划（树）。叶子级别上来自存储层读取数据并写入Shuffle持久层；其他级别上来自&#x2F;到Shuffle持久层读取和写入数据。完成整个查询后，在Shuffle持久层中存储最终结果，并将其发送给客户端。</p>
+</li>
+<li><p>考虑图4中所示的示例，该示例说明了在Wikipedia表格上运行top-k查询时如何进行：</p>
+</li>
+<li><p><img src="/./dremel_shuffle_based_execution.png" srcset="/img/loading.gif" lazyload alt="image-20230430132927022"></p>
+</li>
+<li><p>阶段1（叶子）中的工作人员从分布式存储器中读取数据、应用过滤器、局部预聚合数据然后按语言字段进行哈希分区 shuffle 。</p>
+</li>
+<li><p>由于数据按聚合键 shuffle ，因此阶段2中的工作人员可以进行最终的GROUP BY聚合，然后按不同键排序、截断限制并将结果发送到下一个阶段。</p>
+</li>
+<li><p>在第3个阶段中只有一个 work node  ；它从Shuffle持久层读取输入，进行最终排序和截断，并将结果写入Shuffle层。查询协调器从Shuffle持久层中读取最终的100条记录，并将其发送给客户端。</p>
+</li>
+<li><p>任何Dremel查询（例如上面提供的示例）都可以在任意数量的工作人员上执行，范围从1到数万名工作人员。 Shuffle持久层提供了这种灵活性。</p>
+</li>
+</ul>
+</li>
+<li><p>*Dynamic Query Execution.*。基于数据形状，查询引擎可以应用多种优化。例如，考虑选择连接策略，如广播与哈希连接。广播连接不需要在连接探测端对数据进行 shuffle ，因此速度可能更快，但只有当构建侧足够小以适合内存时才能使用广播。</p>
+<ul>
+<li>通常，在查询计划期间获得准确的基数估计是困难的；众所周知，在联接中错误会指数级传播[27]。Dremel 选择了一条路径，在查询执行过程中根据收集到的统计信息动态更改查询执行计划。这种方法是通过 shuffle 持久层和由查询协调器进行集中式查询编排实现的。在广播与哈希连接方面，Dremel 将从哈希连接开始，并在两侧都进行 shuffle 处理，但如果一侧完成得很快并且低于广播数据大小阈值，则 Dremel 将取消第二次 shuffle 并改为执行广播连接。</li>
+</ul>
+</li>
+</ul>
+<h1 id="其他优化"><a href="#其他优化" class="headerlink" title="其他优化"></a>其他优化</h1><ul>
+<li><em>Stand-by server pool</em>。通过分布式SQL执行引擎，可以启动一个系统并准备好立即处理提交的查询。这消除了用户编写自己的MapReduce或Sawzall作业时存在的机器分配、二进制复制和二进制启动延迟。</li>
+<li><em>Speculative execution</em>。当数百台机器处理一个查询时，最慢的工作者可能比平均值慢一个数量级。如果没有任何补救措施，则最终效果是用户端到端查询延迟高达一个数量级。为解决这个问题，Dremel将查询拆分成数千个小任务，在完成任务时每个工作者都可以接受任务。通过这种方式，慢速机器处理较少的任务而快速机器则处理更多的任务。此外，为了对抗查询执行结束时长尾延迟，Dremel可以针对滞后者发出重复任务，并降低总体延迟时间。因此性能成为可用资源总量而不是最慢组件功能。</li>
+<li><em>Multi-level execution trees</em>。在几秒钟内使用数百台计算机来处理单个查询需要协调性能 。 Dremel使用具有顶部根服务器、中间服务器和叶子服务器的树形结构来解决这个问题。执行从根到叶子，然后返回。该模型最初是从Google的搜索借鉴而来。它很好地并行化了请求的分派和查询结果的组装。</li>
+<li><em>Column-oriented schema representation</em>。Dremel的存储格式被设计为自描述，即数据分区存储嵌入式模式。在Google使用的模式通常包含数千个字段。解析完整模式可能比读取和处理来自分区的数据列更耗时。为了解决这个问题，Dremel内部架构表示本身以列格式存储。</li>
+<li>*Balancing CPU and IO with lightweight compression.*。使用列格式使压缩更有效，因为相似值（单个列的所有值）按顺序存储。这意味着必须从存储层读取较少字节，进而减少查询延迟时间 。另一方面 ，解压数据需要CPU周期 ，因此涉及越多 的 压缩 ， CPU成本就越高 。关键是选择一个平衡数据大小减小与CPU解压缩成本之间关系 的 压缩方案 ， 以便既不会出现CPU瓶颈也不会出现IO瓶颈。</li>
+<li><em>Approximate results.</em> 。许多分析不需要100％的准确性，因此提供处理top-k和count-distinct的近似算法可以降低延迟。Dremel使用一次通过算法，这些算法与多层次执行树结构配合良好。此外 ， Dremel允许用户指定在返回结果之前要处理多少数据百分比 。由于滞后效应，在处理了98％的数据后返回结果已被证明可以将延迟时间提高2-3倍。</li>
+<li>*Query latency tiers.*。为了在共享服务器池中实现高利用率，Dremel必须本地支持多个用户同时发出多个查询。由于数据大小范围广泛，有些查询可以在几秒钟内完成，而其他查询可能需要数十秒钟的时间。为确保“小”查询保持快速，并且不会被具有“大”查询的用户阻塞，Dremel在中间服务器上使用调度程序公平地安排资源。调度程序需要能够抢占部分查询处理以允许处理新用户的查询，以避免先前的用户通过运行数百个并发查询来垄断资源的情况。即使是来自单个用户的查询也可能需要不同的优先级，例如支持交互式仪表板与执行每日ETL管道作业等任务。</li>
+<li>*Reuse of fifile operations.*。对于一个请求，在几秒钟内处理成千上万个文件将给分布式文件系统带来巨大负载压力。这实际上可能成为实现低延迟性能瓶颈所在之处：当数千台Dremel工作者向文件系统主节点发送元数据和向块服务器发送打开和读取操作时就会产生此问题。 Dremel采用了一些技术解决了这个问题：最重要的技术是通过从根服务器批量获取元数据并将其传递到叶服务器进行数据读取来重用从文件系统获得的元数据。另一种技术是创建更大的文件，以便可以通过较少的文件表示相同的表，从而减少了文件元数据操作。</li>
+<li>*Guaranteed capacity.*。在第5节中引入集中式调度程序时介绍了预留概念，这也有助于提高延迟性能。例如，客户可以预留一些容量，并仅将该容量用于对延迟敏感的工作负载。当未充分利用保证容量时，这些资源可供其他人使用；但是当请求这些资源时，则立即授予给客户使用。 Dremel工作者使用自定义线程调度程序，它会立即重新分配CPU以执行已预订任务并暂停非预订任务。</li>
+<li>*Adaptive query scaling.*。在第5节描述的灵活执行DAGs是改善不断增长和多样化工作负载下延迟性能的重要组成部分。根据查询计划为每个查询单独构建执行DAG可能很关键：考虑全局聚合（例如COUNT或SUM）：对于固定聚合树结构而言，在多个中间级别上需要进行多次跳转处理此类查询；但是采用灵活DAGs则无需超过两个聚合级别——叶子级别聚合输入并生成每个文件一个记录，而顶级则执行最终聚合。相反，考虑top-k查询（即ORDER BY … LIMIT）：叶子阶段中的每个工作者都会产生许多记录。在具有大量输入的单个节点上进行最终聚合将成为瓶颈。因此，为了处理这种查询，Dremel动态构建一个聚合树，其深度取决于输入大小。</li>
+</ul>
+<h1 id="Other-Systems"><a href="#Other-Systems" class="headerlink" title="Other Systems"></a>Other Systems</h1><p>自2011年VLDB论文以来，有一些数据库管理系统项目是Dremel的副本或灵感来源。</p>
+<ul>
+<li>Apache Drill<ul>
+<li>Drill是一个基于Hadoop的Dremel开源实现。该项目始于2012年在MapR公司。支持通过Janino嵌入式Java编译器进行查询代码生成。惠普企业宣布他们将不再支持Drill的开发工作，时间为2020年。</li>
+</ul>
+</li>
+<li>Dremio<ul>
+<li>基于Apache Arrow，灵感来自Dremel的开源&#x2F;商业DBMS。由CMU校友于2015年开始。</li>
+<li>利用用户定义的物化视图（“反射”）加速对外部数据文件的查询执行。</li>
+<li>还依赖于基于Java的codeghen和向量化。</li>
+</ul>
+</li>
+<li>Apache Impala、<ul>
+<li>Impala是受Dremel启发的另一个分布式文件系统上执行查询的DBMS。</li>
+<li>由前Google数据库人员于2012年在Cloudera开始开发。</li>
+<li>支持过滤器和解析逻辑的代码生成。</li>
+<li>将执行器组件放置在每个数据节点上以提供解析和谓词下推。</li>
+</ul>
+</li>
+</ul>
+<p>还有<a target="_blank" rel="noopener" href="https://uniffle.apache.org/">Apache Uniffle</a>（腾讯）提供分布式 shuffle 服务。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>Dremel是一种创新的DBMS，早于所有其他主要的云原生OLAP DBMS。shuffle 阶段似乎很浪费，但它简化了工程，并可以提高性能。这也是将DBMS组件分解为单独服务以抽象原始资源好处的一个很好的例子。</p>
+<p>解耦了计算、内存、存储，元数据存储，在现代云计算时代的先驱。</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2023/slides/19-bigquery.pdf">15-721 spring 2023</a></li>
+<li><a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2023/papers/19-bigquery/p3461-melnik.pdf">Dremel: A Decade of Interactive SQL Analysis at Web Scale</a>, in <em>VLDB</em>, 2020</li>
+<li><a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2023/papers/19-bigquery/melnik-vldb10.pdf">Dremel: Interactive Analysis of Web-Scale Datasets</a>, in <em>VLDB</em>, 2010 <em>(Optional)</em></li>
+<li><a target="_blank" rel="noopener" href="https://www.kancloud.cn/digest/in-memory-computing/202157">https://www.kancloud.cn/digest/in-memory-computing/202157</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.kancloud.cn/digest/in-memory-computing/202158">https://www.kancloud.cn/digest/in-memory-computing/202158</a></li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" class="category-chain-item">论文笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/" class="print-no-link">#数据仓库</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Dremel | A Decade of Interactive SQL Analysis at Web Scale</div>
+      <div>http://tanweime.com/2023/04/30/Dremel/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>tanwei</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>April 30, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/04/30/pipeline%E6%89%A7%E8%A1%8C%E5%BC%95%E6%93%8E%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%B7%A5%E7%A8%8B%E4%BC%98%E5%8C%96/" title="pipeline执行引擎以及一些工程优化">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">pipeline执行引擎以及一些工程优化</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/02/09/SIGMOD%E2%80%9918-Column-Sketches/" title="SIGMOD&#39;18 | Column Sketches">
+                        <span class="hidden-mobile">SIGMOD&#39;18 | Column Sketches</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: '4f713f1947b300227da8918f013d3d7e'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

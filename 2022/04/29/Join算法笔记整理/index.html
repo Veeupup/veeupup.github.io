@@ -1,0 +1,822 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="[TOC] Join 算法一个好的数据库的设计应该是尽量减少信息的重复和冗余，通常会将不同的数据放在不同的表中，对数据进行拆解分别存储。为了获取完整的分析数据，我们就需要从多表中取数据，将多个表连接成一个表，方便我们进行分析。 Join 一般分为 Inner Join 和 Outer Join，下面用两张图表示他们的区别   Inner Join 表示的是两个表的交集，   上图是 Left Ou">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Join算法笔记整理">
+<meta property="og:url" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/index.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="[TOC] Join 算法一个好的数据库的设计应该是尽量减少信息的重复和冗余，通常会将不同的数据放在不同的表中，对数据进行拆解分别存储。为了获取完整的分析数据，我们就需要从多表中取数据，将多个表连接成一个表，方便我们进行分析。 Join 一般分为 Inner Join 和 Outer Join，下面用两张图表示他们的区别   Inner Join 表示的是两个表的交集，   上图是 Left Ou">
+<meta property="og:locale">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429145459031.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429145526956.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429152912102.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429163605582.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429155153602.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429154945524.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429161457053.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429161618742.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429161843754.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429162614451.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429162625551.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429162642489.png">
+<meta property="og:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429163016850.png">
+<meta property="article:published_time" content="2022-04-29T08:46:01.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.224Z">
+<meta property="article:author" content="tanwei">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/image-20220429145459031.png">
+  
+  
+  
+  <title>Join算法笔记整理 - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Join算法笔记整理"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-04-29 16:46" pubdate>
+          April 29, 2022 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          8 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Join算法笔记整理</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>[TOC]</p>
+<h1 id="Join-算法"><a href="#Join-算法" class="headerlink" title="Join 算法"></a>Join 算法</h1><p>一个好的数据库的设计应该是<strong>尽量减少信息的重复和冗余</strong>，通常会将不同的数据放在不同的表中，对数据进行拆解分别存储。为了获取完整的分析数据，我们就需要从多表中取数据，将多个表连接成一个表，方便我们进行分析。</p>
+<p>Join 一般分为 Inner Join 和 Outer Join，下面用两张图表示他们的区别</p>
+<img src="image-20220429145459031.png" srcset="/img/loading.gif" lazyload alt="image-20220429145459031" style="zoom:50%;" />
+
+<p>Inner Join 表示的是两个表的交集，</p>
+<img src="image-20220429145526956.png" srcset="/img/loading.gif" lazyload alt="image-20220429145526956" style="zoom:50%;" />
+
+<p>上图是 Left Outer Join 表示的是两个表，左边表数据行全部保留，右边表保留符合连接条件的行。</p>
+<h2 id="Join-算子的输出"><a href="#Join-算子的输出" class="headerlink" title="Join 算子的输出"></a>Join 算子的输出</h2><p>对于表 <code>R</code> 和 <code>S</code>  ，通过  Join 算子计算之后，Join 算子只会输出在 join attributes 上符合条件的行并且将两个表中的 tuple 连接起来输出。</p>
+<p>实际系统中 Join 算子输出的的 tuple 的内容会不同，这主要取决于 DBMS 的执行器、存储模型和这个 query 本身。下面有几种 join 的通常的输出</p>
+<ul>
+<li>直接输出数据：这种方法将外部表和内部表中的属性值复制到元组中，转换到一个中间结果表中。<ul>
+<li>优势：在于未来查询计划中的操作符永远不需要查询基表来获取更多数据</li>
+<li>缺点：需要更多的内存来物化整个元组</li>
+</ul>
+</li>
+<li>Record ID：在这种方法中，DBMS只复制连接键和记录id匹配的元组。这种方法对于列存储非常理想，因为DBMS不会复制不是查询所需要的列存储的数据。这就是 <code>late materialization</code></li>
+</ul>
+<h2 id="Cost-估算"><a href="#Cost-估算" class="headerlink" title="Cost 估算"></a>Cost 估算</h2><p>这是用于计算不同 join 算法将只会计算磁盘的 I&#x2F;O。这包括从磁盘读取数据的 I&#x2F;O 以及写出中间结果的 I&#x2F;O。注意只有 I&#x2F;O 被考虑到了，因为输出的结果的代价都是一样的。</p>
+<blockquote>
+<p>Join 的本质就是暴⼒匹配，所有tuple的⽐较时间和最终输出的时间都相同，所以⽐较的就是不同算法之间将⻚⾯Page或者说磁盘块加载进⼊内存中IO的次数，IO的次数越少，join算法的效率越⾼</p>
+</blockquote>
+<p>这里对下面的不同 Join 算法的估算做一个设定：</p>
+<ul>
+<li>外部表 R 中有 M 个 page，m 个 tuple</li>
+<li>内部表 S 中有 N 个 page，n 个 tuple</li>
+</ul>
+<h1 id="单机-Join-算法"><a href="#单机-Join-算法" class="headerlink" title="单机 Join 算法"></a>单机 Join 算法</h1><p>这里只是介绍了一些基础的 Join 算法，还有更多针对 OLAP 系统的 Join 算法的改进这里并未总结到一起。</p>
+<h2 id="Nested-Loop-Join"><a href="#Nested-Loop-Join" class="headerlink" title="Nested Loop Join"></a>Nested Loop Join</h2><p>简而言之，这种类型的连接算法由两个嵌套的for循环组成，它们遍历在两个表中的元组，并比较它们。如果元组匹配<strong>联接谓词</strong>，则输出它们。</p>
+<p>位于外层for循环中的表称为外层表，而位于内部for循环中的表称为内部表。</p>
+<p>DBMS总是希望使用<strong>“较小的”表作为外部表</strong>。可以用小来表示元组数或页面数。DBMS还希望尽可能多地缓冲外部表到内存中，同时外部表还可以尝试利用索引在内部表中查找匹配。</p>
+<h3 id="Simple-Nested-Loop-Join"><a href="#Simple-Nested-Loop-Join" class="headerlink" title="Simple Nested Loop Join"></a>Simple Nested Loop Join</h3><p>对于外部表的每个tuple，和内部表中的每个tuple进行匹配。这是最差的情况，因为 DBMS 必须对于外部表中的每个 tuple 都进行一次全量的 scan，</p>
+<p>Cost：<code>M + (m * N)</code></p>
+<blockquote>
+<p>每次加载⼀个外部⻚⾯，每个外部⻚⾯的tuple都加载⼀个内部表的⻚⾯，就需要m*N次加载内部⻚⾯，然后外部表加载M次</p>
+</blockquote>
+<h3 id="Blocked-Nested-Loop-Join"><a href="#Blocked-Nested-Loop-Join" class="headerlink" title="Blocked Nested Loop Join"></a>Blocked Nested Loop Join</h3><p>对于外部表中的每个 block，从内部表中取得每一个 block来进行两个 block 之间的遍历比较。这种算法可以有更少的磁盘 I&#x2F;O，因为 DBMS 对于外部表的每个 block 扫描一次内部表而不是每个 tuple 都要扫描一次内部表</p>
+<p>Cost：<code>M + (M * N)</code></p>
+<blockquote>
+<p>每次加载⼀个外部⻚⾯，每个外部⻚⾯的tuple都加载⼀个内部表的⻚⾯，就需要m*N次加载内部⻚⾯，然后外部表加载M次</p>
+</blockquote>
+<p>当然，如果 DBMS 有 <code>B</code> 块 Buffer 来给 join 计算，那么每次就可以 scan <code>B-2</code> 个外部表的 block 进入到内存中来，将会使用一个 Buffer 来作为临时的输出的 block</p>
+<p>Cost: <code>M + (M / (B - 2)) * N</code></p>
+<blockquote>
+<p>外部表每次加载B-2个⻚⾯，内部表每次加载⼀个，可以⼀次⽐较B-2个外部⻚⾯和⼀个内部⻚⾯，然后⼀共就是内部表的每个⻚⾯加载进⼊都要和<br>B-2个⽐较，⼀共就需要!</p>
+</blockquote>
+<h3 id="Index-Nested-Loop-Join"><a href="#Index-Nested-Loop-Join" class="headerlink" title="Index Nested Loop Join"></a>Index Nested Loop Join</h3><p>前面两种算法会比较差，这是因为DBMS需要对内部表中的每个数据来进行一次全局的 scan。但是如果说两个 join 表的 key 上有索引，那么就可以加速这个查找过程了。DBMS 能够使用存在的索引或者说临时构建一个索引来给 join 使用。</p>
+<p>外部表必须是没有索引的那一个，内部表必须要有索引。假设每个  index 查找的消耗是一个固定的值 <code>C</code></p>
+<p>Cost：<code>M + (m * C)</code></p>
+<blockquote>
+<p>有索引之后，outer表不带索引，inner表带上索引，对于outer表⾥的每个元素，直接根据索引找到对应的⻚⾯加载进⼊内存即可，所以是M+m*C</p>
+</blockquote>
+<h2 id="Sort-Merge-Join"><a href="#Sort-Merge-Join" class="headerlink" title="Sort-Merge Join"></a>Sort-Merge Join</h2><p>简而言之，sort-merge join 就是让两个 table 在他们 join key 上来做一个排序。DBMS 将会使用一些外排序的归并算法来实现，将会移动两个 table 上的指针来计算匹配的 tuple</p>
+<p>这种算法很有用：当一个或者两个表都已经在 join 属性上排好序了或者说输出需要在 join key 上排好序。</p>
+<p>算法的过程：</p>
+<img src="image-20220429152912102.png" srcset="/img/loading.gif" lazyload alt="image-20220429152912102" style="zoom:50%;" />
+
+<p>最坏的情况就是 join 属性在所有的 tuple 上都有相同的值，但是这是不太可能发生的。在这种情况下，Cost 将会变为 <code>M * N</code>。对于大多数情况来说，这个merge cost 将会大概是 <code>M + N。</code></p>
+<p>假设 DBMS 有 B 块 Buffer 来用来做 Join：</p>
+<ul>
+<li>Sort Cost for Table R: <code>2 * M</code> + log<sub>B-1</sub>(M&#x2F;B)</li>
+<li>Sort Cost for Table S: <code>2 * N</code> + log<sub>B-1</sub>(N&#x2F;B)</li>
+<li>Merge Cost: <code>M+N</code></li>
+</ul>
+<blockquote>
+<p>外排序算法：</p>
+<ul>
+<li>2-way external merge sort</li>
+</ul>
+<img src="image-20220429163605582.png" srcset="/img/loading.gif" lazyload alt="image-20220429163605582" style="zoom:50%;" />
+
+<ul>
+<li>k-way external merge sort</li>
+</ul>
+<p>外排序的一些优化：</p>
+<ul>
+<li>Double Buffering Optimization：预取下一次计算的 page ，这将减少 IO 的等待时间，这将使用多线程，因为需要当前正在计算的时候取出下一个 page 的数据</li>
+<li>Using B+ Trees：如果已经在某些排序键上有了B+树索引，那么就可以加速排序，分为 Clustered B+ Tree 和 Uncluster B+ Tree 来分别不同的实现</li>
+</ul>
+</blockquote>
+<h2 id="Hash-Join"><a href="#Hash-Join" class="headerlink" title="Hash Join"></a>Hash Join</h2><p>简而言之， Hash join 就是用 hash table 将 tuple 根据 join 属性划分为很多个小的 chunk。这种算法将减少 DBMS 对于每个 tuple 所需要比较的次数。hash join 只能被用在计算 join key 上的等值连接中。</p>
+<h3 id="Basic-Hash-Join"><a href="#Basic-Hash-Join" class="headerlink" title="Basic Hash Join"></a>Basic Hash Join</h3><ul>
+<li>Phase 1, Build：首先将扫描外表根据 hash function h<sub>1</sub> 来对 join 属性进行扫描。在 hash表中的key是 join 属性，value 可以是整个 tuple 也可以是 tuple id</li>
+<li>Phase2, Probe: 扫描内部表，同样使用 hash function h<sub>1</sub> 来进行计算来在哈希表中找到匹配的 tuple。因为 hash表中可能有冲突，所以 DBMS 必须检查一下两个 tuple 是否是真的匹配。</li>
+</ul>
+<img src="image-20220429155153602.png" srcset="/img/loading.gif" lazyload alt="image-20220429155153602" style="zoom:50%;" />
+
+<p>如果 DBMS 知道外表的大小，那么可以使用一个 static hash table，如果不知道外表的大小，那么就可以使用一个 dynamic hash table。</p>
+<p>当然也可以在构建外部表的时候同时构建一个 bloom filter 来加速这个过程，可以快速判断某个值是否存在</p>
+<h3 id="Grace-Hash-Join-x2F-Hybrid-Hash-Join"><a href="#Grace-Hash-Join-x2F-Hybrid-Hash-Join" class="headerlink" title="Grace Hash Join &#x2F; Hybrid Hash Join"></a>Grace Hash Join &#x2F; Hybrid Hash Join</h3><p>当内存放不下 table 的时候，DBMS 将会随机将 table 换出和换入，这将让性能非常差。</p>
+<p>Grace Hash Join 是 Basic Hash Join 的拓展，可以将内部 Hash 的结果划分为多个 partition 来写出到磁盘上。</p>
+<ul>
+<li>Phase1, Build: 首先，同时扫描内表和外表，使用 相同的 hash function 来在 join 属性上进行划分， hash table的 bucket 将会被写出到磁盘上。如果一个 bucket 在内存中放不下了，那么DBMS 将会使用 <code>recursive partitioning</code> ，使用一个不同的 hash function 来对 bucket 做进一步的划分，这个过程将会持续进行，知道 bucket 能够让到内存中</li>
+<li>Phase2, Probe: 对于每个 bucket，从 bucket 中会恢复出内表和外表的数据来做一个 nested loop join，因为所有的 page 都能够放置到内存中，所以 join 操作将会非常快</li>
+</ul>
+<img src="image-20220429154945524.png" srcset="/img/loading.gif" lazyload alt="image-20220429154945524" style="zoom:50%;" />
+
+<p>Cost:</p>
+<ul>
+<li>Partition Phase Cost: <code>2 * (M + N)</code></li>
+<li>Probe Phase Cost: <code>M + N</code></li>
+<li>Total Cost: <code>3 * (M + N)</code></li>
+</ul>
+<h1 id="OLAP-的分布式-Join"><a href="#OLAP-的分布式-Join" class="headerlink" title="OLAP 的分布式 Join"></a>OLAP 的分布式 Join</h1><p>这里主要介绍一些在分布式 OLAP 中用到的 Join 算法。</p>
+<p>对于AP的workload，大部分时间都花在了 Join 和从磁盘读取上， 分布式Join的效率取决于目标表的分区方案。</p>
+<ul>
+<li>一种方法是将整个表放在单个节点上，然后执行 Join。 但是，DBMS 失去了分布式 DBMS 的并行性，这违背了拥有分布式 DBMS 的目的， 这么做还需要通过网络进行非常重的数据传输。</li>
+</ul>
+<p>要连接表 R 和 S，DBMS 需要在同一节点上拿到合适的 tuple， 需要将合适的 tuple 传输到合适的节点上，一旦这个过程完成，就会通过上面的单机 Join 算法 来进行计算，所以 我们应该始终发送计算 Join 所需的最少数量的 tuple 到某个节点上。</p>
+<p>下面有四种常见的分布式 Join 的算法：</p>
+<h2 id="场景一"><a href="#场景一" class="headerlink" title="场景一"></a>场景一</h2><p>有一张<strong>小表被复制到了每个节点</strong>，但是其他的表在节点间被分区了。每个节点在本地计算 join 的结果然后将结果发送到聚合结果的节点上。</p>
+<img src="image-20220429161457053.png" srcset="/img/loading.gif" lazyload alt="image-20220429161457053" style="zoom:50%;" />
+
+
+
+<h2 id="场景二"><a href="#场景二" class="headerlink" title="场景二"></a>场景二</h2><p>每个表都被 join 属性分区了，刚好每个节点在本地执行 join 然后将结果发送到聚合结果的节点上</p>
+<img src="image-20220429161618742.png" srcset="/img/loading.gif" lazyload alt="image-20220429161618742" style="zoom:50%;" />
+
+<h2 id="场景三"><a href="#场景三" class="headerlink" title="场景三"></a>场景三</h2><p>表被不同的属性进行了分区。如果其中某个表更小一点，那么可以将小表 broadcast 到所有的节点上进行计算</p>
+<img src="image-20220429161843754.png" srcset="/img/loading.gif" lazyload alt="image-20220429161843754" style="zoom:50%;" />
+
+<h2 id="场景四"><a href="#场景四" class="headerlink" title="场景四"></a>场景四</h2><p>两个表都不是在 join key 上进行分区，DBMS 需要在节点之间 shuffling 数据来让每个节点上都有对应 join key 的分区的数据进行 join</p>
+<img src="image-20220429162614451.png" srcset="/img/loading.gif" lazyload alt="image-20220429162614451" style="zoom:50%;" />
+
+<img src="image-20220429162625551.png" srcset="/img/loading.gif" lazyload alt="image-20220429162625551" style="zoom:50%;" />
+
+<img src="image-20220429162642489.png" srcset="/img/loading.gif" lazyload alt="image-20220429162642489" style="zoom:50%;" />
+
+<h2 id="Semi-Join"><a href="#Semi-Join" class="headerlink" title="Semi-Join"></a>Semi-Join</h2><p>半连接是一种连接运算符，其结果仅包含左表中的列。 分布式 DBMS 使用半连接来最小化 Join 期间发送的数据量。</p>
+<p>它类似于自然连接，只是右表上不用于计算连接的属性受到限制（例如下图， 只发送<code>R.id</code> 到第二个节点上）。</p>
+<img src="image-20220429163016850.png" srcset="/img/loading.gif" lazyload alt="image-20220429163016850" style="zoom:50%;" />
+
+
+
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://15445.courses.cs.cmu.edu/fall2020/">https://15445.courses.cs.cmu.edu/fall2020/</a></li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/database/" class="category-chain-item">database</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Join算法笔记整理</div>
+      <div>http://tanweime.com/2022/04/29/Join算法笔记整理/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>tanwei</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>April 29, 2022</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/09/11/23%E5%B1%8A%E5%B0%8F%E7%A1%95%E7%A7%8B%E6%8B%9B%E5%88%86%E4%BA%AB-%E6%95%B0%E6%8D%AE%E5%BA%93:%E5%AD%98%E5%82%A8%E6%96%B9%E5%90%91/" title="23届小硕秋招分享-数据库/存储方向">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">23届小硕秋招分享-数据库/存储方向</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/03/23/2022-%E7%AC%AC%E5%9B%9B%E6%9C%9F-%E6%96%B0%E5%AD%A6%E6%9C%9F%E7%9A%84%E7%83%A6%E6%81%BC-2-14-3-22/" title="2022-第四期-新学期的烦恼(2.14-3.22)">
+                        <span class="hidden-mobile">2022-第四期-新学期的烦恼(2.14-3.22)</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: '39fdaa819f2584947240c7d41b41c7fd'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

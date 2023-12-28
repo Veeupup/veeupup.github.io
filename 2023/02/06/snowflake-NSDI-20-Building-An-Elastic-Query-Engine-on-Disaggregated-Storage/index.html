@@ -1,0 +1,859 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="要点概括本文链接：Building-An-Elastic-Query-Engine-on-Disaggregated-Storage | NSDI’ 20  这篇文章是 snowflake 在实际数据分析下对于 snowflake 设计的一篇总结分析，并不是整体架构的设计和介绍。 主要介绍了临时存储系统的设计，任务调度，资源弹性和多租户的一些设计和数据分析上的结果和未来的展望，这个时候 snowf">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Snowflake NSDI&#39;20 | Building An Elastic Query Engine on Disaggregated Storage">
+<meta property="og:url" content="http://tanweime.com/2023/02/06/snowflake-NSDI-20-Building-An-Elastic-Query-Engine-on-Disaggregated-Storage/index.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="要点概括本文链接：Building-An-Elastic-Query-Engine-on-Disaggregated-Storage | NSDI’ 20  这篇文章是 snowflake 在实际数据分析下对于 snowflake 设计的一篇总结分析，并不是整体架构的设计和介绍。 主要介绍了临时存储系统的设计，任务调度，资源弹性和多租户的一些设计和数据分析上的结果和未来的展望，这个时候 snowf">
+<meta property="og:locale">
+<meta property="og:image" content="http://tanweime.com/snowflake_arch.png">
+<meta property="og:image" content="http://tanweime.com/snowflake_lazy_hash.png">
+<meta property="og:image" content="http://tanweime.com/snowflake_multi_tenancy.png">
+<meta property="article:published_time" content="2023-02-05T16:03:57.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.252Z">
+<meta property="article:author" content="tanwei">
+<meta property="article:tag" content="数据仓库">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/snowflake_arch.png">
+  
+  
+  
+  <title>Snowflake NSDI&#39;20 | Building An Elastic Query Engine on Disaggregated Storage - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Snowflake NSDI&#39;20 | Building An Elastic Query Engine on Disaggregated Storage"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-02-06 00:03" pubdate>
+          February 6, 2023 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          7.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          23 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Snowflake NSDI&#39;20 | Building An Elastic Query Engine on Disaggregated Storage</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="要点概括"><a href="#要点概括" class="headerlink" title="要点概括"></a>要点概括</h1><p>本文链接：<a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2023/papers/02-modern/vuppalapati-nsdi22.pdf">Building-An-Elastic-Query-Engine-on-Disaggregated-Storage | NSDI’ 20</a> </p>
+<p>这篇文章是 snowflake 在实际数据分析下对于 snowflake 设计的一篇总结分析，并不是整体架构的设计和介绍。</p>
+<p>主要介绍了<strong>临时存储系统的设计，任务调度，资源弹性和多租户</strong>的一些设计和数据分析上的结果和未来的展望，这个时候 snowflake 已经很成功了，相比四年之前刚提出论文发现了更多实际的问题。</p>
+<blockquote>
+<p>不清楚 snowflake 架构可以先看2016年的第一篇论文 <a target="_blank" rel="noopener" href="https://event.cwi.nl/lsde/papers/p215-dageville-snowflake.pdf">The Snowflake Elastic Data Warehouse</a> </p>
+</blockquote>
+<p>下面用一些话总结下本文的要点：</p>
+<ul>
+<li>临时存储系统（Ephemeral Storage System）主要缓存中间计算结果（join）和远程表文件数据，同时为了一致性也作为写入的 write-through cache</li>
+<li>任务调度也是和临时存储系统的特性相耦合的，在临时存储系统上进行 locality-aware 的调度 + work stealing</li>
+<li>计算资源&#x2F;临时存储的弹性是在 VW 之间使用惰性一致性哈希进行的，防止数据 reshuffle 产生大量流量</li>
+<li>多租户下的资源共享主要是计算和存储，云环境下计算隔离已经解决，现在挑战是设计一个共享的临时存储系统，主要挑战来自于在支持细粒度的弹性，而不会牺牲跨租户的隔离属性（很难决策如何 evict 哪些租户的哪些数据）</li>
+</ul>
+<p>这篇文章最好的一点就是从数据分析出发，能够给现在很多云数仓的设计和实现提供很多避坑的参考，但是本文由于篇幅也没有介绍更多的细节了，比较笼统。</p>
+<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>这篇文章介绍了在 <code>snowflake </code> 的一些使用经验，<code>snowflake</code> 是一个支持SQL的云原生数据仓库，是最先进的数据库之以，snowflake 的设计有三个主要的设计目标：1. 计算和存储的弹性 2. 支持多租户 3. 高性能。</p>
+<p>这篇文章介绍了<code>snowflake</code>的设计与实现，也介绍了这些年云上基础设施（新硬件，细粒度的计费）的一些变化是如何影响<code>snowflake</code>系统的设计和优化的。这篇文章使用系统收集了每14天一个周期的七千万的queries的数据来说明现在存在的问题，以及突出了多个方面的新研究上的挑战，包括<strong>存储系统和高性能查询执行引擎的设计</strong>。</p>
+<h1 id="1-Introduction"><a href="#1-Introduction" class="headerlink" title="1 Introduction"></a>1 Introduction</h1><p>shared-nothing 的架构一直是传统的查询执行引擎和数据仓库的基础，在这种架构下，持久化的数据被划分到一个个的计算节点上，每个都只负责他自己保存的本地数据。这种shared-nothing的架构让计算能够变得很容易scale-out，能够提供不错的任务隔离性和比较好的数据亲和性，从而在各种 workload 下都能比较好的工作。但是也有以下的一些缺点：</p>
+<ul>
+<li>Hardware-workload mismatch<ul>
+<li>Shared-nothing 的架构尝试在计算节点上的 CPU, memory, storage, bandwidth resources 之间寻求一个完美的平衡来适应不同的 workload。例如，一个高带宽轻量的计算节点可能不适合重计算轻带宽的查询，但是很多人希望执行在同一套配置上各种不同类型的query，而不是给每种查询配置一个新的集群。所以为了达到这个性能目标，通常来说资源都必须被过度配置，这会导致平均资源利用严重不足以及更高的成本。</li>
+</ul>
+</li>
+<li>Lack of Elasticity<ul>
+<li>即使硬件资源可以达到对workload的需求，shared-nothing架构本身的 static-parallelism 和数据分片也会限制 data skew 和随时间变化的 workload。shared-nothing 的弹性不够，例如在计算中通常需要通过增加、删除节点来提供弹性，但是在这种架构下添加删除节点将会导致数据的 reshuffle，会消耗很大的网络带宽，同时也会带来性能的下降，因为进行 data reshuffle 的节点通常也用于计算</li>
+</ul>
+</li>
+</ul>
+<p>传统的数仓处理的query通常都有可预测的模式和速率，例如数据一般都来在OLTP系统中的交易数据。但是这种情况今天被改变了，因为有了大量难以控制的外部数据源（Logs, social media, web applications …），这将导致很多临时的、随时间变化并且难以预测的查询。对于这种查询，shared-nothing的架构将导致成本过高、不灵活、性能差以及效率低下的特点。</p>
+<p>为了突破这个限制，设计并实现了 snowflake，一个弹性、具有事务查询特点的SQL查询引擎。snowflake 的主要目标是为了解决在 shared-nothing 架构中存储和计算的耦合，解决方法就是将二者解耦。snowflake 将数据存放在 Amazon S3 类似的系统中，这些系统能够提高高可用和按需付费的弹性。计算弹性采用了一些提前预热的计算节点池，能够根据需求分配给用户来使用。</p>
+<p>snowflake 的系统设计有两个关键点：</p>
+<ol>
+<li>使用了定制存储系统用来管理和交换在计算节点之间的临时&#x2F;中间数据（tables exchanged during joins），这种临时存储系统很有必要，因为现有的存储有两个大的限制存在<ol>
+<li>现有的存储（S3）不能提供必要的低延迟和高吞吐，会让计算节点再交换中间数据的时候被阻塞住</li>
+<li>S3 等提供了更强的可用性和持久性语义，这是中间数据所不需要的</li>
+</ol>
+</li>
+<li>snowflake 也将这种临时存储系统用作持久化数据的 <code>write-through cache</code>，结合自己实现的查询调度机制，Snowflake 能够减少由计算存储分解引起的额外网络负载，并减轻减少数据局部性的性能开销。</li>
+</ol>
+<p>这篇文章将会讲 snowflake 的系统设计，着重于 临时存储系统的设计，查询调度，支持多租户的弹性和效率。下面是一些重要的发现：</p>
+<ul>
+<li>用户的查询种类有多样性。read-only: 28%, write-only: 13%, read-write: 59%</li>
+<li>查询生成的中间数据量大小相差多个数量级，可能从 GB -&gt; TB，而且查询生成的中间数据量和读取的持久化数据量 or 查询执行时间没有直接的关系</li>
+<li>在DW 中常见的 data skew 和临时访问模式下，即使本地存储容量很小，也能为其提供平均很高的cache hit rate（60%~80%）</li>
+<li>有些客户利用了对弹性资源的需求（20%左右），计算节点的数量可能发生多达两个数量级的变化</li>
+<li>虽然峰值利用率很高，但是平均资源利用率很低，CPU、内存、网络 Tx 和网络 Rx 的平均利用率分别为～51%、～19%、～11%、～32%。</li>
+</ul>
+<p>本文的研究也证实了目前社区中有些很棒的研究方向：</p>
+<ul>
+<li>解耦计算和临时存储<ul>
+<li>计算和持久存储解耦以获得存储和计算资源的弹性，但是目前计算和临时存储仍然是紧耦合的。临时存储和计算资源的比例可能相差几个数量级，导致CPU利用率不足或者临时存储抖动。</li>
+</ul>
+</li>
+<li>深层次存储结构<ul>
+<li>snowflake 的临时存储系统也使用类似存算分离的cache思路，采用双层存储系统（内存主要，SSD&#x2F;HDD作为第二层），生产集群中的存储系统结构越来越深，需要新的机制来有效利用。</li>
+</ul>
+</li>
+<li>Pricing at sub-second timescales<ul>
+<li>snowflake 采用预热的节点池为客户提供服务，通常是在小时为粒度的层次上具有成本效应，但是大多数云厂商已经能够提供更细粒度的定价，这将导致在多租户之间的资源弹性和资源共享之间面临新的挑战。</li>
+</ul>
+</li>
+</ul>
+<p>#2 Design Overview</p>
+<p>snowflake 针对持久化存储和临时存储是不一样的策略。</p>
+<h2 id="2-1-Persistent-and-Intermediate-data"><a href="#2-1-Persistent-and-Intermediate-data" class="headerlink" title="2.1 Persistent and Intermediate data"></a>2.1 Persistent and Intermediate data</h2><p>像大多数 DW 系统一样，snowflake 有三种类型的数据</p>
+<ul>
+<li>持久化的数据：用户在数据库中存储的表的数据，每张表都可能同时被多个查询访问，需要长时间存在并且需要强持久性和高可用性的保证</li>
+<li>中间数据：由查询运算符产生（join），通常由参与该查询的节点使用。中间数据是临时存在的，为了避免访问中间数据被阻塞，对中间数据的低延迟、高吞吐的要求高于对于持久性的要求，因为如果中间数据产生问题，只需要再次计算即可</li>
+<li>元数据：例如 object catalogs，从数据库的表到持久化文件存储的映射，statics, transaction logs 等，大部分数据量小，没有什么系统上有趣的挑战</li>
+</ul>
+<h2 id="2-2-End-to-end-System-Architecture"><a href="#2-2-End-to-end-System-Architecture" class="headerlink" title="2.2 End-to-end System Architecture"></a>2.2 End-to-end System Architecture</h2><p>这是 snowflake 高层次的架构图，分为下面四个部分</p>
+<p><img src="/snowflake_arch.png" srcset="/img/loading.gif" lazyload></p>
+<ul>
+<li>集中控制的云服务：所有客户端都通过向该 snowflake cloud services 提交查询，该层负责访问控制、查询优化、调度、事务管理，并发控制等。CS 被设计为需要提供多租户的能力，需要有多个复制来实现高可用和高拓展性。</li>
+<li>通过 Virtual Warehouse 抽象来进行弹性计算：每个 VW 本质上是一组 AWS EC2 实例，查询以分布式的方式在上面运行。</li>
+<li>弹性的临时存储：与持久化数据存储的要求不一样，需要低延迟、高吞吐来保证计算节点的最小阻塞。该临时存储系统和 VW 的计算节点处于同一位置，并明确设计为在添加、删除节点时自动拓展，不需要数据 reshuffle 或者重组，每个VW都运行自己独立的分布式临时存储系统。</li>
+<li>弹性的持久化存储：snowflake将数据存储在一个远程的、分解、持久化的S3存储中。S3支持存储不可变文件，为了将表存储在 S3 中，Snowflake 将它们水平分区为大的、不可变的文件，这些文件相当于传统数据库系统中的块。 在每个文件中，每个单独的属性或列的值被组合在一起并压缩，如 PAX中那样。 每个文件都有一个 header，用于存储文件中每一列的偏移量，使snowflake能够使用 S3 的部分读取功能来仅读取执行查询所需的列。</li>
+</ul>
+<h2 id="2-3-End-to-end-query-execution"><a href="#2-3-End-to-end-query-execution" class="headerlink" title="2.3 End-to-end query execution"></a>2.3 End-to-end query execution</h2><p>query 执行从客户查询提交给 CS，然后进行查询解析、优化和调度，生成需要执行的任务，随后在 VW 节点上安排这些任务。CS 将跟踪每个查询的进度，收集性能，并在出现故障的时候重新启动节点进行计算。</p>
+<h1 id="3-Dataset"><a href="#3-Dataset" class="headerlink" title="3 Dataset"></a>3 Dataset</h1><p>数据集在 <a target="_blank" rel="noopener" href="https://github.com/resource-disaggregation/snowset">https://github.com/resource-disaggregation/snowset</a> 公布，这里的数据集不看语义信息，只看统计特征。</p>
+<ul>
+<li>Read-only: 28%</li>
+<li>Write-only: 13%</li>
+<li>Read-write: 59%</li>
+</ul>
+<h1 id="4-Ephemeral-Storage-System"><a href="#4-Ephemeral-Storage-System" class="headerlink" title="4  Ephemeral Storage System"></a>4  Ephemeral Storage System</h1><h2 id="4-1-Storage-Architecture-and-Provisioning"><a href="#4-1-Storage-Architecture-and-Provisioning" class="headerlink" title="4.1 Storage Architecture, and Provisioning"></a>4.1 Storage Architecture, and Provisioning</h2><p>临时存储中有两个重要的设计原则：</p>
+<ul>
+<li>同时使用内存和SSD：内存已满时溢出到SSD，因为内存的限制太多，容量可能不够</li>
+<li>允许将中间数据溢出到持久化存储S3中，以防止本地SSD容量耗尽</li>
+</ul>
+<p><strong>未来的发展方向: 将计算和临时存储解耦</strong></p>
+<p>对于性能关键的查询，希望中间数据都在内存orSSD中，而不是溢出到S3，这需要准确的资源配置，有两个原因导致无法实现：</p>
+<ol>
+<li>可用节点的数量有限，每个节点提供了固定数量的CPU、内存、存储</li>
+<li>中间数据的大小无法预测，很难根据先验知识预测，</li>
+</ol>
+<p>所以为了解决第一个问题，希望将计算和临时存储解耦；第二个问题更难阶段，对于此类查询，同时实现高性能和高资源利用率将需要计算和临时存储的解耦，以及临时存储系统的细粒度弹性的有效技术。</p>
+<h2 id="4-2-Persistent-Data-Caching"><a href="#4-2-Persistent-Data-Caching" class="headerlink" title="4.2 Persistent Data Caching"></a>4.2 Persistent Data Caching</h2><p>在临时存储系统中的一个重要发现：中间数据是 <code>short-lived</code>。虽然存储中间数据需要大量的内存和磁盘，但是平均很低，所以临时存储系统的容量需要在中间数据和经常访问的持久化数据之间进行统计复用。有两点比较好：1. DW 查询出现了对于持久化数据的显著倾斜 2. 临时存储系统的性能远高于持久数据存储。</p>
+<p>Snowflake 通过“机会主义（opportunistically）”缓存频繁访问的持久数据文件，实现中间数据和持久数据之间的临时存储系统容量的统计复用，这里的机会主义指的是中间数据存储始终优先于缓存持久数据文件。<strong>持久数据文件采用一致性哈希进行分配到节点中，每个节点采用LRU策略决定持久数据文件的缓存和驱逐</strong>。这种缓存改进了许多查询的时间，而且由于优先缓存中间数据，因此可以在不影响中间数据访问性能的情况下实现查询执行时间的性能改进。</p>
+<p>需要注意的是持久数据的缓存为了保证正确的语义需要仔细设计。首先是 <strong>数据的一致性</strong>，为了确保数据的一致性，通过将临时存储系统当做持久存储系统的 <code>write-through cache</code> 来实现，其次，使用基础的一致性哈希时需要在VW弹性拓展时 reshuffle 数据，通过惰性一致性哈希完全避免这种数据的 reshuffle。</p>
+<p>持久化数据被缓存在临时存储系统中意味着持久数据访问的请求的某些子集可以由临时存储系统提供服务。临时存储系统的 <code>write-through</code> 策略导致写入到临时存储系统的数据和写入持久存储的数据量大概相等。</p>
+<p>尽管临时存储容量远小于持久数据（大约为 0.1%），但是 DW 中的cache 命中率非常高，只读查询接近 80%，读写约为 60%。</p>
+<p><strong>未来发展方向：需要在缓存方面做更细致的工作。</strong></p>
+<p>除了访问位置以外，缓存命中率还取决于 <strong>查询可用的缓存大小相较于查询访问的持久数据量</strong>，反过来说，有效的缓存大小取决于 VW 的大小和并发查询执行生成的中间数据量。</p>
+<p>另外两个技术问题：</p>
+<ol>
+<li>端到端的查询性能取决于持久文件命中率和中间数据的I&#x2F;O吞吐，因此优化临时存储系统如何在两者之间分配容量非常重要。例如优先缓存被许多查询缓存的持久文件，而不是只被一个查询使用的中间数据</li>
+<li>现有的存储机制是为了双层存储系统设计的（内存第一层，HDD&#x2F;SSD作为第二层）在 snowflake 中已经有了三个层次，本地计算内存、临时存储系统、远程持久化存储。云上的存储层次结构变得越来越深。Snowflake 使用传统的两层机制：每个节点实现一个本地 LRU 策略用于从本地内存到本地 SSD 的逐出，以及一个独立的 LRU 策略用于从本地 SSD 到远程持久数据存储的逐出。 然而，为了有效地利用加深的存储层次结构，snowflake需要新的缓存机制来有效地协调跨多个层的缓存。</li>
+</ol>
+<h1 id="5-Query-Task-Scheduling"><a href="#5-Query-Task-Scheduling" class="headerlink" title="5 Query (Task) Scheduling"></a>5 Query (Task) Scheduling</h1><h2 id="Locality-arare-task-scheduling"><a href="#Locality-arare-task-scheduling" class="headerlink" title="Locality-arare task scheduling"></a>Locality-arare task scheduling</h2><p>为了充分利用临时存储系统， snowflake 的调度系统是在持久化的数据文件上  locality-aware 的（这些文件可能在临时存储系统中），具体来说，snowflake 使用 table file name 的一致性哈希来将持久数据文件分配给计算节点。调度系统将计算任务分配给其文件被散列到的节点上。</p>
+<p>这种调度决策下，查询的并行性将和数据文件的一致性哈希结果紧密相连。也就是说假设在有 10 个节点的 VW 中，涉及到 100,000 个文件的查询和涉及到 100 个文件的查询都将分布在这十个节点上。</p>
+<h2 id="work-stealing"><a href="#work-stealing" class="headerlink" title="work stealing"></a>work stealing</h2><p>一致性哈希会导致分区不平衡，所以为了避免这个问题，snowflake 将使用 work-stealing，如果任务的完成时间（执行时间 + 等待时间）早于预期，那么将从另一个节点窃取任务。注意：<strong>窃取任务时，读取数据将从远程数据存储中读取，避免了在已经发生过载的节点上增加负载。</strong></p>
+<h2 id="Future-Directions"><a href="#Future-Directions" class="headerlink" title="Future Directions"></a>Future Directions</h2><p>调度决策有两种方案，</p>
+<ul>
+<li>将任务尽可能与数据缓存结合到一起<ul>
+<li>优点：最大限度减少了读取持久数据的网络流量</li>
+<li>缺点：导致中间数据交换的网络流量增加</li>
+</ul>
+</li>
+<li>将所有任务都放在一个节点上<ul>
+<li>优点：消除中间数据交换的网络流量</li>
+<li>缺点：增加读取持久数据的网络流量</li>
+</ul>
+</li>
+</ul>
+<p>直接选择两种调度程序可能都不是最好的选择，所以需要在两种调度策略种进行中和，然后将任务调度到各个节点上。</p>
+<h1 id="6-Resource-Elasticity"><a href="#6-Resource-Elasticity" class="headerlink" title="6 Resource Elasticity"></a>6 Resource Elasticity</h1><p>存算分离的架构导致能够独立的拓展计算和存储的弹性。</p>
+<p>计算弹性：通过预热的节点池实现，能够在几十秒的粒度上提供弹性</p>
+<p>存储弹性：存储弹性的实现交给了数据存储（S3……）</p>
+<h2 id="6-1-Lazy-Consistent-Hashing"><a href="#6-1-Lazy-Consistent-Hashing" class="headerlink" title="6.1 Lazy Consistent Hashing"></a>6.1 Lazy Consistent Hashing</h2><p>实现弹性的一个大的问题就是临时存储中的数据管理，临时存储系统将会缓存持久数据文件，每个文件只能缓存在VW中始终散列的节点上，所以还是有点类似 shared-nothing 架构了，任何固定分区的架构都需要在拓展节点时进行大量的数据 reshuffle，此外这些节点还会同时跑计算。</p>
+<p>snowflake 采用了惰性一致性哈希解决了这个问题，整体思路很好理解，利用了缓存数据一定存储在远程存储中这一事实进行实现，完全避免了在节点弹性时增加的对数据的 reshuffle。</p>
+<p>例子如下：开始 VW 中五个节点，File1 File6 在 node1 上，这个时候 Task6 将会在 node1 上执行，之后集群增加一个节点 node6，这个时候本应该将 File6 reshuffle 到 node6 上，但是这里先不进行操作，当下次计算任务安排到 node6 的时候，node6 直接从远程存储中读取，node1 中的 file6 将不再被访问，也不需要进行数据的 reshuffle。</p>
+<p><img src="/snowflake_lazy_hash.png" srcset="/img/loading.gif" lazyload alt="image-20230205225251951"></p>
+<h2 id="6-2-Elasticity-Characteristics"><a href="#6-2-Elasticity-Characteristics" class="headerlink" title="6.2 Elasticity Characteristics"></a>6.2 Elasticity Characteristics</h2><p>大约 20% 的用户会使用到计算弹性的需求，然后这些弹性会在 VW 的生命周期内会产生多达两个数量级的变化。</p>
+<p><strong>未来发展方向</strong></p>
+<p>目前客户并没有利用超过80% VW的弹性。即使确实有对 VW 进行弹性的用户，也有进一步优化的机会。例如有些客户的 query 间隔要比 snowflake 当前 VW 计算节点弹性的时间更长，snowflake 认为产生这个问题的主要原因在于用户对于需求的错误估计（例如设置了太少的节点，查询的频率又太高），导致二者不匹配。</p>
+<blockquote>
+<p>个人感觉有点像计算资源申请上的某种 “抖动”</p>
+</blockquote>
+<p>两个未来的工作：</p>
+<ol>
+<li><p>希望实现查询内粒度的弹性。具体来说，即使在单个查询的生命周期内，资源消耗也会有很大差异。 这在具有许多内部阶段的长时间运行的查询中尤为普遍。 因此，除了以查询到达间隔的粒度自动缩放 VW 之外，理想情况下，即使在执行查询期间，snowflake也希望支持某种级别的任务级弹性。</p>
+</li>
+<li><p>尝试类似 <code>serverless-less</code> 的平台，类似 AWS Lambda，Azure Functions 以及 Google Cloud Functions 这些自动拓展、高弹性以及细粒度的计费功能。目前 snowflake 很难过渡的原因是：<strong>安全性和性能都缺乏对于隔离的支持</strong>，所以 snowflake 可能自己来定制一种类似 <code>serverless-less</code> 的平台，但是需要解决高效远程临时存储访问的问题。</p>
+</li>
+</ol>
+<h1 id="7-Multi-tenancy"><a href="#7-Multi-tenancy" class="headerlink" title="7 Multi-tenancy"></a>7 Multi-tenancy</h1><p>snowflake 当前通过 VW 的抽象来支持多租户。每个 VW 都在一组独立的节点上运行，都具有自己的临时存储系统，这让 snowflake 能够为其客户提供性能隔离。</p>
+<p>snowflake 的 VW 架构导致了一个问题：性能隔离和利用率上的 trade off。</p>
+<p>下面的前四个图可以看到不错的CPU利用率，但是其他的利用率，例如 memory, network 等利用率比较低。观察发现高达 30% 的VW在 CPU 上的利用率的标准差和均值一样大……，这导致利用率不足。</p>
+<p><img src="/snowflake_multi_tenancy.png" srcset="/img/loading.gif" lazyload alt="image-20230205231404488"></p>
+<p>最近云厂商的发展让 pre-warmed node pool 变得成本效益很差，过去 infra 通过小时计费，具有成本效益，但是现在计价越来越精确，从snowflake 的角度来说更精细的管理意味着成本的降低利润增多，客户也需要这种计价方式来提供更低的成本。</p>
+<p>以前在按小时计费的模型中，只要至少有一个客户 VW 在一小时内使用了一个特定节点， 可以在整个期间向该客户收费。 但是，对于按秒计费，无法向任何特定客户收取预热节点上未使用的周期费用。 这种成本效率低下的情况为转向<strong>基于共享的模型</strong>提供了强有力的理由，其中<strong>计算和临时存储资源在客户之间共享</strong>：在这样的模型中，可以通过<strong>跨共享资源集统计复用</strong>客户需求来提供弹性，避免 需要维护大量预热节点。</p>
+<h2 id="7-1-Resource-Sharing"><a href="#7-1-Resource-Sharing" class="headerlink" title="7.1 Resource Sharing"></a>7.1 Resource Sharing</h2><p>VW 资源使用随时间变化的变化表明snowflake的一些客户工作负载本质上是突发性的。 因此，转向共享架构将使 Snowflake 能够通过细粒度统计多路复用实现更好的资源利用。</p>
+<p>目前的主要挑战是提供接近当前架构的隔离性。</p>
+<p>从客户的角度来看，他们感兴趣的关键指标是查询性能，即端到端查询完成时间。 虽然纯粹的共享架构可能会提供良好的平均情况性能，但在尾部保持良好的性能比较难搞。 需要在 VW 中隔离的两个关键资源是计算和临时存储。 Snowflake 可以利用数据中心环境中计算隔离方面的一些工作。 此外，Snowflake 中的集中式任务调度程序和统一执行运行时使问题比在通用集群中隔离计算更容易。 在这里，转而关注隔离 memory 和 storage 隔离的问题。</p>
+<p>主要的目标是设计一个 <strong>共享的临时存储系统</strong>，（同时使用内存和 SSD），该系统支持细粒度的弹性，而不会牺牲跨租户的隔离属性。实现这个系统有两个主要挑战：</p>
+<ol>
+<li>首先，由于临时存储系统多路复用缓存的持久数据和中间数据，因此这两个部分数据需要共同共享，同时确保跨租户隔离。 虽然 Snowflake 可以利用现有技术来共享缓存，但snowflake需要一种额外了解中间数据共存的机制。 不幸的是，预测缓存条目的有效生命周期很困难。 在确保硬隔离的同时从租户中驱逐空闲缓存条目并将它们提供给其他租户是不可能的，因为snowflake无法预测租户下一次访问缓存条目的时间。 既要定义更合理的隔离保证，又要设计可以提供此类保证的生命周期感知缓存共享机制。</li>
+<li>第二个挑战是在没有跨租户干扰的情况下实现弹性：扩展共享的临时存储系统容量以满足特定客户的需求不应影响共享该系统的其他租户。 例如，如果简单的使用 Snowflake 当前的临时存储系统，隔离属性将会被马上违反。 由于 Snowflake 中的所有缓存条目都一致地散列到相同的全局地址空间中，因此扩展临时存储系统容量最终会触发所有租户的惰性一致性散列机制。 这可能会导致多个租户看到缓存未命中率增加，从而导致性能下降。 解决这一挑战需要临时存储系统为每个单独的租户提供私有地址空间，并且在资源扩展时，仅为那些已分配额外资源的租户重组数据。</li>
+</ol>
+<p><strong>Memory Disaggregation</strong></p>
+<p>VW 的内存平均利用率很低，这点很难顶，因为 DRAM 很贵，虽然共享资源会提高 CPU 和 memory 的利用率，但是不太可能在两个维度上实现最佳利用率，此外 CPU 和 memory 的特点非常不同，需要独立拓展这些资源，准确配置资源是困难的； 由于过度配置内存的成本很高，snowflake需要有效的机制来在多个租户之间共享分解内存，同时提供隔离保证。</p>
+<h1 id="8-Related-Work"><a href="#8-Related-Work" class="headerlink" title="8 Related Work"></a>8 Related Work</h1><ul>
+<li>SQL-as-a-Service systems<ul>
+<li>还有其他几个系统在云中提供 SQL 功能作为服务。 其中包括 Amazon Redshift 、Aurora 、Athena 、Google BigQuery 和 Microsoft Azure Synapse Analytics 。 虽然有一些论文描述了其中一些系统的设计和操作经验，但是这些系统并没有从数据角度分析工作负载和系统特征。</li>
+<li>Redshift 将持久数据的主要副本存储在计算 VM 集群中（S3 仅用于备份）； 因此，它可能无法实现 Snowflake 通过将计算与持久存储解耦而获得的好处。 Aurora和 BigQuery（基于 Dremel的架构）类似于 Snowflake 将计算和持久存储解耦。 然而，Aurora 依赖于定制设计的持久存储服务，该服务能够分离数据库日志处理，而不是传统的 blob 存储。</li>
+</ul>
+</li>
+<li>存算分离的系统<ul>
+<li>Facebook 的key-value 的存储下的 workload 在 flash 存储上进行了分离。 snowflake 发现了这种思路，并在数据仓库工作负载的背景下进一步扩展了它。 Pocket 和 Locus 是为无服务器分析应用程序设计的临时存储系统。 如果我们要在 Snowflake 中分解计算和临时存储，这样的系统将是很好的选择。 然而，这些系统在查询的生命周期内<strong>不提供细粒度的资源弹性</strong>。 因此，他们要么必须先验地了解中间数据大小（用于在提交查询时配置资源），要么如果事先无法获得此类知识，则会遭受性能下降的困扰。 如 4.1 中所述，预测中间数据大小非常困难。 最好扩展这些系统以提供细粒度的弹性和交叉查询隔离。 对远程闪存存储进行高性能访问的技术  也将是有效实现计算和临时存储系统解耦的重要组成部分。</li>
+</ul>
+</li>
+<li>多租户资源共享<ul>
+<li>ESX 服务器开创了虚拟机环境中多租户内存共享的技术，包括 ballooning 和 idle-memory taxation。 Memshare 考虑在单机上下文中 DRAM 缓存中的缓存容量的多租户共享，以最大化命中率的方式在应用程序之间共享未保留的容量。 FairRide 同样考虑分布式中的多租户缓存共享，同时考虑租户之间的数据共享。 类似于这些系统中使用的缓存资源共享和隔离机制对于使 Snowflake 采用资源共享架构非常重要。 如前所述，扩展这些机制以使其了解中间数据和持久数据的不同特征和要求会很有趣。</li>
+</ul>
+</li>
+</ul>
+<h1 id="9-Conclusion"><a href="#9-Conclusion" class="headerlink" title="9 Conclusion"></a>9 Conclusion</h1><p>我们展示了运行 Snowflake 的操作经验，Snowflake 是一种具有最先进的 SQL 支持的数据仓库系统。 我们在本文中涵盖的关键设计和实现方面涉及 Snowflake 如何实现计算和存储弹性，以及多租户环境中的高性能。 随着 Snowflake 已经成长为每天对数 PB 数据执行数百万次查询的数千名客户提供服务，我们认为自己至少取得了部分成功。 然而，使用在 14 天内执行约 7000 万次查询期间从我们系统的各个组件收集的数据，我们的研究强调了我们当前设计和实现的一些缺点，并强调了可能感兴趣的新研究挑战更广泛的系统和网络社区。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" class="category-chain-item">论文笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/" class="print-no-link">#数据仓库</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Snowflake NSDI&#39;20 | Building An Elastic Query Engine on Disaggregated Storage</div>
+      <div>http://tanweime.com/2023/02/06/snowflake-NSDI-20-Building-An-Elastic-Query-Engine-on-Disaggregated-Storage/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>tanwei</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>February 6, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/02/07/SIGMOD-2008-Column-Stores-vs-Row-Stores/" title="SIGMOD 2008 | Column-Stores-vs-Row-Stores">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SIGMOD 2008 | Column-Stores-vs-Row-Stores</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/12/26/2022%E6%80%BB%E7%BB%93/" title="2022总结">
+                        <span class="hidden-mobile">2022总结</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: '5eb4bde412aab7444960d11f319a169b'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,734 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="本文记录下采用树莓派来搭建软路由实现科学上网的过程，中间没有想象的那么顺利…折腾了大概两个小时才弄完，这里记录下整个流程和一些坑。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="树莓派3b搭建openwrt科学上网">
+<meta property="og:url" content="http://tanweime.com/2023/05/03/%E6%A0%91%E8%8E%93%E6%B4%BE3b%E6%90%AD%E5%BB%BAopenwrt%E7%A7%91%E5%AD%A6%E4%B8%8A%E7%BD%91/index.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="本文记录下采用树莓派来搭建软路由实现科学上网的过程，中间没有想象的那么顺利…折腾了大概两个小时才弄完，这里记录下整个流程和一些坑。">
+<meta property="og:locale">
+<meta property="og:image" content="http://tanweime.com/LAN_setting.png">
+<meta property="og:image" content="http://tanweime.com/WAN_setting.png">
+<meta property="article:published_time" content="2023-05-03T13:22:27.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.253Z">
+<meta property="article:author" content="tanwei">
+<meta property="article:tag" content="科学上网">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/LAN_setting.png">
+  
+  
+  
+  <title>树莓派3b搭建openwrt科学上网 - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="树莓派3b搭建openwrt科学上网"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-05-03 21:22" pubdate>
+          May 3, 2023 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          1.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          4 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">树莓派3b搭建openwrt科学上网</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>本文记录下采用树莓派来搭建软路由实现科学上网的过程，中间没有想象的那么顺利…折腾了大概两个小时才弄完，这里记录下整个流程和一些坑。</p>
+<span id="more"></span>
+
+<h1 id="树莓派刷-openwrt"><a href="#树莓派刷-openwrt" class="headerlink" title="树莓派刷 openwrt"></a>树莓派刷 openwrt</h1><h2 id="下载-openwrt-镜像"><a href="#下载-openwrt-镜像" class="headerlink" title="下载 openwrt 镜像"></a>下载 openwrt 镜像</h2><p>首先去下载固件给树莓派刷系统，下载的地址为：</p>
+<blockquote>
+<p>定制固件下载地址：<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://doc.openwrt.cc/2-OpenWrt-Rpi/1-Download/">https://doc.openwrt.cc/2-OpenWrt-Rpi/1-Download/</a></p>
+<p>作者项目地址：<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://github.com/SuLingGG/OpenWrt-Rpi">https://github.com/SuLingGG/OpenWrt-Rpi</a></p>
+</blockquote>
+<p>目前我使用的型号是 3B+，下载 <code>immortalwrt-bcm27xx-bcm2710-rpi-3-squashfs-sysupgrade.img.gz</code>即可。</p>
+<h2 id="刷写固件"><a href="#刷写固件" class="headerlink" title="刷写固件"></a>刷写固件</h2><p>下载 <a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://www.balena.io/etcher/">BalenaEtcher</a>，安装，然后插上TF卡转接器，它会自动检测到USB设备，开始刷系统</p>
+<blockquote>
+<p>我这里遇到了刻录失败的情况，原因是 TF 卡未格式化完全，去这里下载 TF 卡格式化软件并且进行完全格式化</p>
+<p><a target="_blank" rel="noopener" href="https://doc.embedfire.com/openwrt/user_manal/zh/latest/User_Manual/quick_start/imageflash.html">https://doc.embedfire.com/openwrt/user_manal/zh/latest/User_Manual/quick_start/imageflash.html</a></p>
+</blockquote>
+<p>刷写完成后，弹出”U盘”，取下TF卡，装到树莓派中，通电等待30秒<strong>（不要插网线）</strong>。</p>
+<h2 id="网络配置"><a href="#网络配置" class="headerlink" title="网络配置"></a>网络配置</h2><p>等树莓派启动之后会默认开启一个名叫 <code>OpenWRT</code> 的WIFI，可以直接连接，连接成功之后访问 <a target="_blank" rel="noopener" href="http://192.168.1.1/">http://192.168.1.1。</a></p>
+<p>默认账号：<code>root</code>，默认密码：<code>password</code>。进去之后可以先修改密码。</p>
+<p>在 <code>网络 -&gt; 接口</code> 中可以看到当前有一个 LAN 口设置，这是树莓派 3B+ 本身的无线 AP 的设置，也就是最终外部设备访问树莓派网络的接口，进去进行一些设置：</p>
+<ul>
+<li><strong>然后点击 <code>高级设置</code> ，取消勾选 <code>以太网适配器: &quot;eth0&quot;</code>，点击保存与应用。</strong></li>
+</ul>
+<p><img src="/LAN_setting.png" srcset="/img/loading.gif" lazyload alt="LAN口设置"></p>
+<blockquote>
+<p>除此之外，由于我从另外一个路由器的 LAN 口接出来，本身的网段也是 <code>192.168.0.x</code>，所以这里把 LAN 口的网段改成了 <code>192.168.2.x</code>，避免冲突</p>
+</blockquote>
+<p>随后进行 WAN 的设置，也就是树莓派本身接入网络的设置，这里我是直接从另外一个路由器的 LAN 口接出来的网线，所以直接选择 DHCP 客户端即可。</p>
+<p><img src="/WAN_setting.png" srcset="/img/loading.gif" lazyload alt="image-20230503213619032"></p>
+<p>到这里 LAN 口和 WAN 口都配置完毕，可以在 web 界面中的 <code>系统 -&gt; TTYD终端</code> 来尝试 ping baidu.com 看是否连接上了 WAN 口；电脑连接 OpenWRT WIFI 看是否能连接以及上网。</p>
+<p>到这里其实应该结束了，但是我发现我这里的 LAN 口和 WAN 之间并没有路由规则，因为两个属于不同的网段，所以我在 iptable 里添加了这么一条规则</p>
+<p><code>iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE</code></p>
+<blockquote>
+<p>来自 chatGPT 的解释：</p>
+<p>这个命令的作用是在Linux系统中使用iptables工具配置NAT(Network Address Translation，网络地址转换)，将私有网络IP地址转换为公有网络IP地址，以实现互联网访问的功能。</p>
+<p>具体来说，这个命令添加了一个POSTROUTING规则，在NAT表中（-t nat），用于转发通过eth0网络接口出去的所有IP数据报（-o eth0）。添加MASQUERADE目标（-j MASQUERADE）意味着源IP地址被掩盖成eth0的IP地址，从而实现了内网地址（如192.168.x.x）到外网地址（如公网IP地址）的映射，这样就可以访问公网。</p>
+</blockquote>
+<p>到此为止树莓派已经能够正常作为一个路由器使用了。</p>
+<h1 id="openclash"><a href="#openclash" class="headerlink" title="openclash"></a>openclash</h1><p>之后就是配置 openclash 的过程，在这个镜像里面已经内置了 openclash，所以不需要安装，如果需要安装参考这里：<a target="_blank" rel="noopener" href="https://github.com/vernesong/OpenClash/wiki/%E5%AE%89%E8%A3%85">openclash 安装</a></p>
+<p>进去添加 clash 订阅即可，记得勾选 “在线订阅转换”，才能将订阅链接替换成配置文件。</p>
+<p>但是我到这里又不行了，openclash 启动不了，报错：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">nohup: failed to run the command `/etc/openclash/clash`: Exec format error<br></code></pre></td></tr></table></figure>
+
+<p>这里是因为 clash 内核的版本对不上，可以直接尝试在页面中更新</p>
+<p><code>服务 -&gt; openclash -&gt; 插件设置 -&gt; 版本更新</code>，选择已经编译版本为 armv7，点下面的检查并更新，但是又因为网络问题下载不了……难蚌</p>
+<p>然后解决方式是手动下载然后替换掉 <code>/etc/openclash/clash</code> 文件即可，记得 <code>chmod +x clash</code>。</p>
+<p>手动下载的地址为：<a target="_blank" rel="noopener" href="https://github.com/vernesong/OpenClash/releases/tag/Clash%EF%BC%8C%E8%AE%B0%E5%BE%97%E8%BF%99%E9%87%8C%E9%80%89%E4%B8%AD">https://github.com/vernesong/OpenClash/releases/tag/Clash，记得这里选中</a> armv7 版本下载即可，之后替换成功了，就能看到成功启动的日志了。</p>
+<h2 id="连接-WAN-LAN"><a href="#连接-WAN-LAN" class="headerlink" title="连接 WAN LAN"></a>连接 WAN LAN</h2><p>我这边设置的 WAN 口和 LAN 口的网络属于两个网段，默认的防火墙配置是无法访问到的，这里需要配置 <code>网络 -&gt; 防火墙</code> 中来自 WAN 的流量都接受，同时设置端口转发规则将</p>
+<h1 id="reference"><a href="#reference" class="headerlink" title="reference"></a>reference</h1><ul>
+<li>basic 参考 <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/1d9f45197627">https://www.jianshu.com/p/1d9f45197627</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/vernesong/OpenClash">https://github.com/vernesong/OpenClash</a></li>
+<li>LAN口和WAN的 route 规则 <a target="_blank" rel="noopener" href="https://www.right.com.cn/forum/thread-3218146-1-1.html">https://www.right.com.cn/forum/thread-3218146-1-1.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/451788328">https://zhuanlan.zhihu.com/p/451788328</a></li>
+<li>flash 刷写不成功 <a target="_blank" rel="noopener" href="https://doc.embedfire.com/openwrt/user_manal/zh/latest/User_Manual/quick_start/imageflash.html">https://doc.embedfire.com/openwrt/user_manal/zh/latest/User_Manual/quick_start/imageflash.html</a></li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%98%E8%85%BE/" class="category-chain-item">折腾</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E7%A7%91%E5%AD%A6%E4%B8%8A%E7%BD%91/" class="print-no-link">#科学上网</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>树莓派3b搭建openwrt科学上网</div>
+      <div>http://tanweime.com/2023/05/03/树莓派3b搭建openwrt科学上网/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>tanwei</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>May 3, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/12/28/2023%E6%80%BB%E7%BB%93/" title="2023总结">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">2023总结</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/05/02/DuckDB-0-%E6%95%B4%E4%BD%93%E4%BB%8B%E7%BB%8D/" title="DuckDB(0): 整体介绍">
+                        <span class="hidden-mobile">DuckDB(0): 整体介绍</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: '68bde3e2cfaba4cd3843a74402949673'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

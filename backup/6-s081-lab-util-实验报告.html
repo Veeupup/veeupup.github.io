@@ -1,0 +1,376 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="欠下的技术债总是要还的…, 上次因为实习中断了第一次学习 6.s081 的学习，实在是不应该 TAT, 现在重新开始学习做 lab, 为了这次监督自己，开始写实验报告，一个是为了自己以后能够快速回忆起来思路，另一个方面是为了督促自己这次完整的做完，所以废话不多说，开始记录第一个 lab 的内容。 Totally Intro这个实验总体上是一个比较简单的实验, 通过写几个用户态的小程序, 搭建好开发">
+<meta property="og:type" content="website">
+<meta property="og:title" content="6.s081-lab-util-实验报告">
+<meta property="og:url" content="http://tanweime.com/backup/6-s081-lab-util-%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="欠下的技术债总是要还的…, 上次因为实习中断了第一次学习 6.s081 的学习，实在是不应该 TAT, 现在重新开始学习做 lab, 为了这次监督自己，开始写实验报告，一个是为了自己以后能够快速回忆起来思路，另一个方面是为了督促自己这次完整的做完，所以废话不多说，开始记录第一个 lab 的内容。 Totally Intro这个实验总体上是一个比较简单的实验, 通过写几个用户态的小程序, 搭建好开发">
+<meta property="og:locale">
+<meta property="og:image" content="http://tanweime.com/backup/primes.gif">
+<meta property="article:published_time" content="2022-01-03T11:33:40.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.257Z">
+<meta property="article:author" content="tanwei">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/backup/primes.gif">
+  
+  
+  
+  <title>6.s081-lab-util-实验报告 - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 60vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="6.s081-lab-util-实验报告"></span>
+          
+        </div>
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      <div class="container nopadding-x-md">
+        <div id="board"
+          >
+          
+          <div class="container">
+            <div class="row">
+              <div class="col-12 col-md-10 m-auto">
+                
+
+<article class="page-content">
+  <p>欠下的技术债总是要还的…, 上次因为实习中断了第一次学习 6.s081 的学习，实在是不应该 TAT, 现在重新开始学习做 lab, 为了这次监督自己，开始写实验报告，一个是为了自己以后能够快速回忆起来思路，另一个方面是为了督促自己这次完整的做完，所以废话不多说，开始记录第一个 lab 的内容。</p>
+<h1 id="Totally-Intro"><a href="#Totally-Intro" class="headerlink" title="Totally Intro"></a>Totally Intro</h1><p>这个实验总体上是一个比较简单的实验, 通过写几个用户态的小程序, 搭建好开发环境, 熟悉 xv6 的代码, 并且熟悉一些常见的系统调用，<code>fork</code>, <code>exec</code>, <code>sleep</code> ,以及一些常见的 shell 命令</p>
+<blockquote>
+<p>注意这里可能有些坑, 在装 qemu 的时候，可以手动源码安装 5.x 版本, 6.x 版本在 macos 上会有些奇怪的问题。</p>
+</blockquote>
+<h1 id="sleep"><a href="#sleep" class="headerlink" title="sleep"></a>sleep</h1><p>这个非常简单，就是尝试使用一下 sleep 系统调用，第一个快速上手的代码, 从输入的参数, 注意在 makefile 中添加下 sleep 的路径即可。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/types.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/stat.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;user/user.h&quot;</span></span><br><br><span class="hljs-type">int</span><br><span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span>* argv [])</span> &#123;<br>  <span class="hljs-keyword">if</span> (argc != <span class="hljs-number">2</span>) &#123;<br>    <span class="hljs-built_in">fprintf</span>(<span class="hljs-number">2</span>, <span class="hljs-string">&quot;usage: sleep seconds\n&quot;</span>);<br>    <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);<br>  &#125;<br><br>  <span class="hljs-type">int</span> seconds = atoi(argv[<span class="hljs-number">1</span>]);<br>  <span class="hljs-keyword">if</span> (seconds &lt; <span class="hljs-number">0</span>) &#123;<br>    seconds = <span class="hljs-number">0</span>;<br>  &#125;<br><br>  sleep(seconds);<br><br>  <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+<h1 id="pingpong"><a href="#pingpong" class="headerlink" title="pingpong"></a>pingpong</h1><p>这里涉及到对于 <code>fork</code>, <code>pipe</code>, <code>read</code>, <code>getpid</code> 等系统调用的综合使用，简单来说就是熟悉下这几个系统调用的使用方式，注意下 <code>pipe[2]</code> 中 <code>pipe[0]</code> 是 <code>READ</code>, <code>pipe[1]</code> 是 <code>WRITE</code>, 建议写成常量的形式，免得写错。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/types.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/stat.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;user/user.h&quot;</span></span><br><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> PIPE_READ  0</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> PIPE_WRITE 1</span><br><br><span class="hljs-type">int</span><br><span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span>* argv [])</span> &#123;<br>  <span class="hljs-keyword">if</span> (argc != <span class="hljs-number">1</span>) &#123;<br>    <span class="hljs-built_in">fprintf</span>(<span class="hljs-number">2</span>, <span class="hljs-string">&quot;usage: pingpong\n&quot;</span>);<br>    <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);<br>  &#125;<br><br>  <span class="hljs-type">int</span> p1[<span class="hljs-number">2</span>];  <span class="hljs-comment">// parent -&gt; child</span><br>  <span class="hljs-type">int</span> p2[<span class="hljs-number">2</span>];  <span class="hljs-comment">// child  -&gt; parent</span><br>  pipe(p1);<br>  pipe(p2);<br><br>  <span class="hljs-keyword">if</span> (fork() == <span class="hljs-number">0</span>) &#123;  <span class="hljs-comment">// in child</span><br>    <span class="hljs-type">char</span> buf[<span class="hljs-number">4</span>];<br>    read(p1[PIPE_READ], &amp;buf, <span class="hljs-number">4</span>);<br>    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d: received %s\n&quot;</span>, getpid(), buf);<br>    write(p2[PIPE_WRITE], <span class="hljs-string">&quot;pong&quot;</span>, <span class="hljs-number">4</span>);<br>    <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>  &#125;<br>  <span class="hljs-keyword">else</span> &#123;<br>    write(p1[PIPE_WRITE], <span class="hljs-string">&quot;ping&quot;</span>, <span class="hljs-number">4</span>);<br>    <span class="hljs-type">char</span> buf[<span class="hljs-number">4</span>];<br>    read(p2[PIPE_READ], &amp;buf, <span class="hljs-number">4</span>);<br>    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d: received %s\n&quot;</span>, getpid(), buf);<br>    wait(<span class="hljs-number">0</span>);<br>  &#125;<br><br>  <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+<h1 id="primes"><a href="#primes" class="headerlink" title="primes"></a>primes</h1><p>这个非常有意思的一个小程序, 用 CSP 的思想来实现的一个程序, 也就是用 <code>pipe</code> 和 <code>fork</code> 来达到现在 <code>golang</code> 里 channel 的通信效果来完成对于质数的查找，完整的思路在这个链接 <a target="_blank" rel="noopener" href="http://swtch.com/~rsc/thread/">http://swtch.com/~rsc/thread/</a>, 思路在于这个图</p>
+<img src="primes.gif" srcset="/img/loading.gif" lazyload />
+
+<p>伪代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python">p = get a number <span class="hljs-keyword">from</span> left neighbor<br><span class="hljs-built_in">print</span> p<br>loop:<br>    n = get a number <span class="hljs-keyword">from</span> left neighbor<br>    <span class="hljs-keyword">if</span> (p does <span class="hljs-keyword">not</span> divide n)<br>        send n to right neighbor<br></code></pre></td></tr></table></figure>
+
+<p>首先输入查找的质数范围，然后每次启动一个进程来进行质数的筛选，每个进程的第一个数字一定是质数，然后这个进程之后接收的数字使用当前的第一个数字来进行质数的排除即可。</p>
+<p>这个思路很清晰了，但是实现上还是比较巧妙的，自己这个也不一定是最好的实现方式，但是写起来很有趣，对于 系统调用以及 CSP 的思想的理解更深了一点</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/types.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/stat.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;user/user.h&quot;</span></span><br><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> PIPE_READ  0</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> PIPE_WRITE 1</span><br><br><span class="hljs-type">void</span> <span class="hljs-title function_">primes</span><span class="hljs-params">(<span class="hljs-type">int</span>* p)</span> &#123;<br>  <span class="hljs-keyword">if</span> (fork() == <span class="hljs-number">0</span>) &#123;<br>    <span class="hljs-type">int</span> first;<br>    <span class="hljs-keyword">if</span> (read(p[PIPE_READ], &amp;first, <span class="hljs-number">4</span>) == <span class="hljs-number">0</span>)<br>      <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;prime %d\n&quot;</span>, first);<br>    <span class="hljs-type">int</span> number;<br>    <span class="hljs-type">int</span> p2[<span class="hljs-number">2</span>];<br>    pipe(p2);<br>    <span class="hljs-keyword">while</span> (read(p[PIPE_READ], &amp;number, <span class="hljs-number">4</span>) &gt; <span class="hljs-number">0</span>) &#123;<br>      <span class="hljs-keyword">if</span> (number % first != <span class="hljs-number">0</span>) &#123;<br>        write(p2[PIPE_WRITE], &amp;number, <span class="hljs-number">4</span>);<br>      &#125;<br>    &#125;<br>    close(p2[PIPE_WRITE]);<br><br>    primes(p2);<br>    wait(<span class="hljs-number">0</span>);<br><br>    <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>  &#125;<br>&#125;<br><br><span class="hljs-type">int</span><br><span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span>* argv [])</span> &#123;<br>  <span class="hljs-keyword">if</span> (argc != <span class="hljs-number">1</span>) &#123;<br>    <span class="hljs-built_in">fprintf</span>(<span class="hljs-number">2</span>, <span class="hljs-string">&quot;usage: pingpong\n&quot;</span>);<br>    <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);<br>  &#125;<br><br>  <span class="hljs-type">int</span> p[<span class="hljs-number">2</span>];  <span class="hljs-comment">// parent -&gt; child</span><br>  pipe(p);<br><br>  <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">2</span>; i &lt; <span class="hljs-number">35</span>; i++) &#123;<br>    write(p[PIPE_WRITE], &amp;i, <span class="hljs-number">4</span>);<br>  &#125;<br>  close(p[PIPE_WRITE]);<br><br>  primes(p);<br>  wait(<span class="hljs-number">0</span>);<br><br>  <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<h1 id="find"><a href="#find" class="headerlink" title="find"></a>find</h1><p>实现一个 <code>find</code>，主要是对于文件系统的一些概念的理解，根据 <code>ls</code> 程序直接改动可能是最好做的方式了，注意 <code>fmtname</code> 的实现即可。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/types.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/stat.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;user/user.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/fs.h&quot;</span></span><br><br><span class="hljs-type">char</span>*<br><span class="hljs-title function_">fmtname</span><span class="hljs-params">(<span class="hljs-type">char</span>* path)</span> &#123;<br>  <span class="hljs-type">static</span> <span class="hljs-type">char</span> buf[DIRSIZ + <span class="hljs-number">1</span>];<br>  <span class="hljs-type">char</span>* p;<br><br>  <span class="hljs-comment">// Find first character after last slash.</span><br>  <span class="hljs-keyword">for</span> (p = path + <span class="hljs-built_in">strlen</span>(path); p &gt;= path &amp;&amp; *p != <span class="hljs-string">&#x27;/&#x27;</span>; p--)<br>    ;<br>  p++;<br><br>  <span class="hljs-comment">// Return blank-padded name.</span><br>  <span class="hljs-keyword">if</span> (<span class="hljs-built_in">strlen</span>(p) &gt;= DIRSIZ)<br>    <span class="hljs-keyword">return</span> p;<br>  memmove(buf, p, <span class="hljs-built_in">strlen</span>(p));<br>  buf[<span class="hljs-built_in">strlen</span>(p)] = <span class="hljs-string">&#x27;\0&#x27;</span>;<br>  <span class="hljs-keyword">return</span> buf;<br>&#125;<br><br><span class="hljs-type">void</span><br><span class="hljs-title function_">find</span><span class="hljs-params">(<span class="hljs-type">char</span>* path, <span class="hljs-type">char</span>* file)</span> &#123;<br>  <span class="hljs-type">char</span> buf[<span class="hljs-number">512</span>], * p;<br>  <span class="hljs-type">int</span> fd;<br>  <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">dirent</span> <span class="hljs-title">de</span>;</span><br>  <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">stat</span> <span class="hljs-title">st</span>;</span><br><br>  <span class="hljs-keyword">if</span> ((fd = open(path, <span class="hljs-number">0</span>)) &lt; <span class="hljs-number">0</span>) &#123;<br>    <span class="hljs-built_in">fprintf</span>(<span class="hljs-number">2</span>, <span class="hljs-string">&quot;find: cannot open %s\n&quot;</span>, path);<br>    <span class="hljs-keyword">return</span>;<br>  &#125;<br><br>  <span class="hljs-keyword">if</span> (fstat(fd, &amp;st) &lt; <span class="hljs-number">0</span>) &#123;<br>    <span class="hljs-built_in">fprintf</span>(<span class="hljs-number">2</span>, <span class="hljs-string">&quot;find: cannot stat %s\n&quot;</span>, path);<br>    close(fd);<br>    <span class="hljs-keyword">return</span>;<br>  &#125;<br><br>  <span class="hljs-keyword">switch</span> (st.type) &#123;<br>  <span class="hljs-keyword">case</span> T_FILE:<br>    <span class="hljs-keyword">break</span>;<br><br>  <span class="hljs-keyword">case</span> T_DIR:<br>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">strlen</span>(path) + <span class="hljs-number">1</span> + DIRSIZ + <span class="hljs-number">1</span> &gt; <span class="hljs-keyword">sizeof</span> buf) &#123;<br>      <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;find: path too long\n&quot;</span>);<br>      <span class="hljs-keyword">break</span>;<br>    &#125;<br>    <span class="hljs-built_in">strcpy</span>(buf, path);<br>    p = buf + <span class="hljs-built_in">strlen</span>(buf);<br>    *p++ = <span class="hljs-string">&#x27;/&#x27;</span>;<br>    <span class="hljs-keyword">while</span> (read(fd, &amp;de, <span class="hljs-keyword">sizeof</span>(de)) == <span class="hljs-keyword">sizeof</span>(de)) &#123;<br>      <span class="hljs-keyword">if</span> (de.inum == <span class="hljs-number">0</span>)<br>        <span class="hljs-keyword">continue</span>;<br>      memmove(p, de.name, DIRSIZ);<br>      p[DIRSIZ] = <span class="hljs-number">0</span>;<br>      <span class="hljs-keyword">if</span> (stat(buf, &amp;st) &lt; <span class="hljs-number">0</span>) &#123;<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;find: cannot stat %s\n&quot;</span>, buf);<br>        <span class="hljs-keyword">continue</span>;<br>      &#125;<br><br>      <span class="hljs-type">char</span>* name = fmtname(buf);<br>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">strcmp</span>(name, <span class="hljs-string">&quot;.&quot;</span>) == <span class="hljs-number">0</span> || <span class="hljs-built_in">strcmp</span>(name, <span class="hljs-string">&quot;..&quot;</span>) == <span class="hljs-number">0</span>)<br>        <span class="hljs-keyword">continue</span>;<br><br>      <span class="hljs-keyword">if</span> (<span class="hljs-built_in">strcmp</span>(name, file) == <span class="hljs-number">0</span>) &#123;<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%s\n&quot;</span>, buf);<br>      &#125;<br>      find(buf, file);<br>    &#125;<br>    <span class="hljs-keyword">break</span>;<br>  &#125;<br>  close(fd);<br>&#125;<br><br><span class="hljs-type">int</span><br><span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span>* argv [])</span> &#123;<br>  <span class="hljs-keyword">if</span> (argc != <span class="hljs-number">3</span>) &#123;<br>    <span class="hljs-built_in">fprintf</span>(<span class="hljs-number">2</span>, <span class="hljs-string">&quot;usage: find path file\n&quot;</span>);<br>    <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);<br>  &#125;<br><br>  find(argv[<span class="hljs-number">1</span>], argv[<span class="hljs-number">2</span>]);<br><br>  <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<h1 id="xargs"><a href="#xargs" class="headerlink" title="xargs"></a>xargs</h1><p>这个比较有意思，实现一个 <code>xargs</code> 的程序，<code>xargs</code> 的语意是将两个 pipe 连接起来的 command，前面一个的输入作为后面一个 command 的命令参数，这里有一个很坑的点，那就是需要 <code>fork</code> 出来一个进程 <code>exec</code> 执行，因为如果直接执行的话，这里得到的命令行参数会混淆有影响</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/types.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/stat.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;user/user.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;kernel/param.h&quot;</span></span><br><br><span class="hljs-type">int</span><br><span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span>* argv [])</span> &#123;<br>  <span class="hljs-type">char</span>* params[MAXARG];<br>  <span class="hljs-type">int</span> i = <span class="hljs-number">0</span>;<br>  <span class="hljs-keyword">for</span> (; i &lt; argc - <span class="hljs-number">1</span>; i++) &#123;<br>    params[i] = argv[i + <span class="hljs-number">1</span>];<br>  &#125;<br><br>  <span class="hljs-type">char</span> buf[<span class="hljs-number">512</span>];<br>  <span class="hljs-type">int</span> len = read(<span class="hljs-number">0</span>, &amp;buf, <span class="hljs-number">512</span>);<br>  <span class="hljs-type">int</span> start = <span class="hljs-number">0</span>;<br>  <span class="hljs-type">int</span> end = <span class="hljs-number">0</span>;<br>  <span class="hljs-keyword">while</span> (end &lt; len) &#123;<br>    <span class="hljs-keyword">while</span> (buf[end] != <span class="hljs-string">&#x27;\n&#x27;</span>) &#123;<br>      end++;<br>      <span class="hljs-keyword">continue</span>;<br>    &#125;<br><br>    <span class="hljs-keyword">if</span> (start == end)<br>      <span class="hljs-keyword">break</span>;<br><br>    <span class="hljs-type">char</span> param[<span class="hljs-number">512</span>];<br>    <span class="hljs-built_in">memset</span>(param, <span class="hljs-string">&#x27;\0&#x27;</span>, <span class="hljs-number">512</span>);<br>    <span class="hljs-built_in">memcpy</span>(param, buf + start, end - start);<br>    params[i] = param;<br>    <span class="hljs-keyword">if</span> (fork() == <span class="hljs-number">0</span>) &#123;<br>      exec(params[<span class="hljs-number">0</span>], &amp;params[<span class="hljs-number">0</span>]);<br>    &#125;<br>    <span class="hljs-keyword">else</span> &#123;<br>      wait(<span class="hljs-number">0</span>);<br>    &#125;<br><br>    start = ++end;<br>  &#125;<br><br>  <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+
+
+  
+
+</article>
+
+
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,875 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="DuckDBWhat is DuckDBDuckDB 是一个 In-Process 的 OLAP 数据库，可以理解为 AP 版本的 SQLite，采用 MIT 协议开源，是荷兰 CWI 数据库组的一个项目，学术气息比较浓厚，项目的组织很有教科书的感觉，架构很清晰，所以非常适合阅读学习。 Why DuckDB come outCWI 数据库组非常厉害，像 MonetDB、Vectorwise 都是该">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DuckDB(0): 整体介绍">
+<meta property="og:url" content="http://tanweime.com/2023/05/02/DuckDB-0-%E6%95%B4%E4%BD%93%E4%BB%8B%E7%BB%8D/index.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="DuckDBWhat is DuckDBDuckDB 是一个 In-Process 的 OLAP 数据库，可以理解为 AP 版本的 SQLite，采用 MIT 协议开源，是荷兰 CWI 数据库组的一个项目，学术气息比较浓厚，项目的组织很有教科书的感觉，架构很清晰，所以非常适合阅读学习。 Why DuckDB come outCWI 数据库组非常厉害，像 MonetDB、Vectorwise 都是该">
+<meta property="og:locale">
+<meta property="og:image" content="http://tanweime.com/overview.png">
+<meta property="og:image" content="http://tanweime.com/duckdb_vector_1.png">
+<meta property="og:image" content="http://tanweime.com/duckdb_vector_unified.png">
+<meta property="og:image" content="http://tanweime.com/duckdb_string.png">
+<meta property="og:image" content="http://tanweime.com/duckdb_nested_types.png">
+<meta property="og:image" content="http://tanweime.com/duckdb_exec_pull_exec.png">
+<meta property="og:image" content="http://tanweime.com/duckdb_pipeline.png">
+<meta property="og:image" content="http://tanweime.com/duckdb_storage_block.png">
+<meta property="og:image" content="http://tanweime.com/duckdb_storage_table.png">
+<meta property="og:image" content="http://tanweime.com/duckdb_compression.png">
+<meta property="og:image" content="http://tanweime.com/duckdb_mvcc.png">
+<meta property="article:published_time" content="2023-05-02T09:42:45.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.220Z">
+<meta property="article:author" content="tanwei">
+<meta property="article:tag" content="数据仓库">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/overview.png">
+  
+  
+  
+  <title>DuckDB(0): 整体介绍 - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DuckDB(0): 整体介绍"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-05-02 17:42" pubdate>
+          May 2, 2023 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          9 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DuckDB(0): 整体介绍</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="DuckDB"><a href="#DuckDB" class="headerlink" title="DuckDB"></a>DuckDB</h1><h2 id="What-is-DuckDB"><a href="#What-is-DuckDB" class="headerlink" title="What is DuckDB"></a>What is DuckDB</h2><p>DuckDB 是一个 In-Process 的 OLAP 数据库，可以理解为 AP 版本的 SQLite，采用 MIT 协议开源，是荷兰 CWI 数据库组的一个项目，学术气息比较浓厚，项目的组织很有教科书的感觉，架构很清晰，所以非常适合阅读学习。</p>
+<h2 id="Why-DuckDB-come-out"><a href="#Why-DuckDB-come-out" class="headerlink" title="Why DuckDB come out"></a>Why DuckDB come out</h2><p><a target="_blank" rel="noopener" href="https://www.cwi.nl/en/groups/database-architectures/">CWI 数据库组</a>非常厉害，像 MonetDB、Vectorwise 都是该组出来的项目。所以在该组早期推出过一个 MonetDBLite 的项目用于嵌入式的数据分析，这是一个基于 MonetDB 实现了想要的 In-Process 的 OLAP，这个过程中发现搞边缘计算 AP 分析很有市场，也发现了做嵌入式AP数据库的各种要求和限制，所以才开始做 DuckDB。</p>
+<p>下面是 DuckDB 团队发现对于嵌入式 In-Process OLAP 的一些要求，并尝试解决它们：</p>
+<ul>
+<li>组合 OLAP 和 ETL 的 workload：能够处理 AP workload 的同时不完全牺牲 OLTP 的性能，同时有效支持批量 append 和批量 update。</li>
+<li>传输效率：需要很方便的在 application 和 DBMS 之间传递数据，因为不是所有任务都能在嵌入式数据库中完成，例如机器学习、画图等，所以需要很方便的在 DBMS 和 application 之间传递数据。而由于 In-Process OLAP 的好处是在同一地址空间内，可以非常方便的来传递数据。</li>
+<li>弹性（Resilience）：边缘计算的 OLAP 所在的硬件和服务器级别的硬件差别非常大而且各异，更容易出现硬件问题，嵌入式DBMS要能够检测这些问题并防止数据损坏</li>
+<li>Cooperation：系统需要优雅地适应资源争用（CPU or RAM），由于嵌入式数据库不再是机器的唯一使用者，因此它不能像以前那样持续使用所有硬件，否则会导致底层应用程序资源匮乏</li>
+</ul>
+<h1 id="Architecture-Overview"><a href="#Architecture-Overview" class="headerlink" title="Architecture Overview"></a>Architecture Overview</h1><p>先来看一个整体的架构图：</p>
+<blockquote>
+<p>来自 Mark 的 15721 slide</p>
+</blockquote>
+<p><img src="/overview.png" srcset="/img/loading.gif" lazyload alt="image-20230501182908424"></p>
+<p>DuckDB 各个组件之间的架构非常的 “textbook”，也就是说会把整个数据库分为：<strong>Parser, logical planner, optimizer, physical planner, execution engine，transaction and storage managers</strong>。</p>
+<p>作为嵌入式数据库，DuckDB没有客户端协议接口或服务器进程，而是使用C&#x2F;C++ API进行访问。此外，DuckDB提供了SQLite兼容层，允许以前使用SQLite的应用程序通过重新链接或库 overload 来使用DuckDB。</p>
+<ul>
+<li><p>Parser</p>
+<ul>
+<li>SQL Parser 源自 Postgres SQL Parser</li>
+</ul>
+</li>
+<li><p>Logical Planner </p>
+<ul>
+<li>binder， 解析所有引用的 schema 中的对象（如 table 或 view）的表达式，将其与列名和类型匹配。</li>
+<li>plan generator，将 binder 生成的 AST 转换为由基本 logical query 查询运算符组成的树，就得到了一颗  type-resolved logical query plan。 DuckDB 还保留存储数据的统计信息，并将其作为规划过程中不同表达式树的一部分进行传播。这些统计信息用于优化程序本身，并且也用于防止整数溢出</li>
+</ul>
+</li>
+<li><p>Optimizer</p>
+<ul>
+<li>使用动态规划进行 join order 的优化，针对复杂的 join graph 会 fallback 到贪心算法</li>
+<li>会消除所有的 subquery</li>
+<li>有一组 rewrite rules 来简化 expression tree，例如执行公共子表达式消除和常量折叠。</li>
+<li>Cardinality estimation 是使用采样和<code>HyperLogLog</code> 的组合完成的，这个过程将优化 logical plan。</li>
+<li>physical planner 将 logical plan 转换为 physical plan，在适用时选择合适的实现方式，例如 sort-merge join or hash join。</li>
+</ul>
+</li>
+<li><p>execution engine</p>
+<ul>
+<li>DuckDB 最开始采用了基于 Pull-based 的 <code>Vector Volcano</code> 的执行引擎，后来切换到了 Push-based 的 pipelines 执行方法</li>
+<li>DuckDB 采用了向量化计算来来加速计算，具有内部实现的多种类型的 vector 以及向量化的 operator</li>
+<li>另外出于可移植性原因，没有采用 JIT，因为 JIT引擎依赖于大型编译器库（例如LLVM），具有额外的传递依赖。</li>
+</ul>
+</li>
+<li><p>Transactions: </p>
+<ul>
+<li>DuckDB 通过 MVCC 提供了 ACID 的特性，实现了<a target="_blank" rel="noopener" href="https://db.in.tum.de/~muehlbau/papers/mvcc.pdf">HyPer专门针对混合OLAP &#x2F; OLTP系统定制的可串行化MVCC 变种</a> 。该变种立即 in-place 更新数据，并将先前状态存储在单独的 undo buffer 中，以供并发事务和 abort 使用</li>
+</ul>
+</li>
+<li><p>Persistent Storage</p>
+<ul>
+<li>单文件存储</li>
+<li>DuckDB 使用<strong>面向读取优化</strong>的 DataBlocks 存储布局（单个文件）。逻辑表被水平分区为 chunks of columns，并使用轻量级压缩方法压缩成 physical block 。每个块都带有每列的<code>min/max</code> 索引，以便快速确定它们是否与查询相关。此外，每个块还带有每列的轻量级索引，可以进一步限制扫描的值数量。</li>
+</ul>
+</li>
+</ul>
+<p> vector, execution, storage 多做一些介绍，其他部分暂时略过…</p>
+<h1 id="Vectors"><a href="#Vectors" class="headerlink" title="Vectors"></a>Vectors</h1><p>DuckDB 内部是一个 <strong>vectorized push-based model</strong>，在执行过程中，vector 会在各个操作符之间流转，而不是一个个 tuple。</p>
+<p>DuckDB 具有非常多自定义的  vector format，非常类似 Arrow，但是对于执行更加友好，是和 volox team 一起设计的，所以很 volex team 的 vector 有很多相似之处。</p>
+<p>每个 vector 只保存单个类型的数据，这里有 logical array 和实际物理实现的区别，对外的操作符看来就是一致的 logical array。</p>
+<p>可以看到下面举例了四种类型的 vector，各自都有自己的逻辑和物理表达形式。</p>
+<p><img src="/duckdb_vector_1.png" srcset="/img/loading.gif" lazyload alt="image-20230502113453116"></p>
+<p>而为了统一起来上层访问不同类型的 vector（避免 operator 算子处理不同 vector 时出现组合爆炸等问题），DuckDB 使用了一种统一的访问格式去访问底层不同的物理格式，也就是新增了一个 selection 数组，通过 DATA 和 Selection 去访问一个数据（类似 dictionary vector 结构）：</p>
+<p><img src="/duckdb_vector_unified.png" srcset="/img/loading.gif" lazyload alt="image-20230502162914316"></p>
+<p>在针对字符串的额存储的时候，DuckDB 针对长短字符串做了不同的格式优化，短字符串直接 inline 存储，长字符串保存 4 byte 的prefix，另外保存一个 8 byte 的 pointer 指向剩下的内容。</p>
+<blockquote>
+<p>保存 4 byte 的 prefix 有利于在比较字符串的时候提前进行比较</p>
+</blockquote>
+<p><img src="/duckdb_string.png" srcset="/img/loading.gif" lazyload alt="image-20230502163259475"></p>
+<p>作为一款现代的 OLAP， DuckDB 也支持非结构化的类型存储，包括了 <code>struct</code> 和 <code>list</code> 这两种结构的 native 存储，DuckDB 不是直接存储 BLOB 或者 JSON 格式，而是使用已有的 vector 去递归表示两种结构。</p>
+<p>像 Struct 包含了三个 vector 去表达一个 struct 结构，list 通过 offset 和 length 去表达 list 中的每一个元素。</p>
+<p>这样可以直接利用已有的高性能算子去计算 nested type 的计算，而不是单独开发一套新的针对结构化类型的算子。</p>
+<p><img src="/duckdb_nested_types.png" srcset="/img/loading.gif" lazyload alt="image-20230502163655601"></p>
+<h1 id="Execution"><a href="#Execution" class="headerlink" title="Execution"></a>Execution</h1><p>最开始 DuckDB 采用 pull-based 的执行引擎，每个算子都实现了 <code>GetChunk</code> 算子，非常经典的 valcano 模型。</p>
+<p>在这个模型中，单线程执行是非常自然的，多线程并行的能力不是很好；在 volcano 模型下，DuckDB 实现并行的方式是添加了一个 <code>Exchange Operator</code>，由优化器将执行计算分成多个 partition，每个partition内部的执行仍然是单线程的 pull-based 的执行，不感知并行，通过 <code>Exchange</code> 算子将多个并行执行的算子的结果给组合起来。</p>
+<p><img src="/duckdb_exec_pull_exec.png" srcset="/img/loading.gif" lazyload alt="image-20230502164422656"></p>
+<p>这么做有不少问题：</p>
+<ul>
+<li>优化器在做 plan explosion 的时候很难找到最好的 plan，因为需要感知并行，来做不同的 partition 切分</li>
+<li>就算找到了合适的 plan 去执行，在真正执行的过程中不同 partition 之间容易出现 data skew 的情况</li>
+<li>另外还有就是中间结果物化的成本，例如在 <code>Exchange Operator</code> 执行的时候需要将下面的执行结果给物化下来</li>
+</ul>
+<p>在 2021 年 DuckDB 切换到了 push-based 的执行引擎，并采用了 Morsel-Driven 的并行实现方式。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/duckdb/duckdb/issues/1583">Move to push-based execution model #1583</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=MA0OsvYFGrc">Push-Based Execution in DuckDB - Mark Raasveldt</a></p>
+</blockquote>
+<p>DuckDB 会将一个 plan 切分成多个 pipeline，每个 pipeline 采用 push-based 的方式进行数据传递和调用。</p>
+<p>DuckDB 在实现 push-based 的执行引擎时，将不同的算子抽象成三种类型 <code>Source</code>，<code>Operator</code> 和 <code>Sink</code>，其 <code>Source</code> 和 <code>Sink</code> 能够感知到全局状态以及并行，中间的每个 <code>Operator</code> 算子都是不感知并行，只是做计算。</p>
+<blockquote>
+<p>可以参照<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/614907875">这篇文章了解 pipeline</a> </p>
+</blockquote>
+<p><img src="/duckdb_pipeline.png" srcset="/img/loading.gif" lazyload alt="image-20230502165931398"></p>
+<p>pull-based 的执行的控制流其实隐含在函数调用中（非常灵活和方便），但是 push-based 的执行能够显式的去控制执行流，而不是只靠函数调用，也就是说 push-based 的控制流由 DuckDB 手动控制，有很多好处</p>
+<ul>
+<li>可以进行更多优化，因为了解每个算子的执行状态<ul>
+<li>vector cache，在不同的 operator 之间增加小的 cache，更加 cache friendly 去执行</li>
+<li>scan sharing，每个算子可以将数据发送到多个算子中去，可以有多个 output</li>
+<li>backpressure，因为了解了全局状态，可以设定一个 buffer size，在buffer 不够的时候暂停执行，有了足够空间再次执行</li>
+<li>async IO，当算子执行 blocking IO 操作的时候暂停执行，等有了数据再继续执行</li>
+</ul>
+</li>
+</ul>
+<h1 id="Storage"><a href="#Storage" class="headerlink" title="Storage"></a>Storage</h1><p>DuckDB 采用了 single-file block-based 的存储格式，WAL 写到了另外一个文件中，通过 header 来实现了 ACID， 每个 block 是 4K 的大小。</p>
+<p><img src="/duckdb_storage_block.png" srcset="/img/loading.gif" lazyload alt="image-20230502170753542"></p>
+<p>每张表存储的时候会先水平切分成不同的 row group（每个大约 120K~ rows），每个 row group 内部的存储是列存的格式。</p>
+<p><img src="/duckdb_storage_table.png" srcset="/img/loading.gif" lazyload alt="image-20230502171223613"></p>
+<p>在每个 row group 内部的列存的时候 DuckDB 使用了压缩技术，可以提升 IO 的速度，同时加速执行（vector 中的一些类似方法）。</p>
+<p>compression 能够让数据变得更小同时加速 query。</p>
+<blockquote>
+<p>有两种类型的压缩：</p>
+<ul>
+<li>General-purpose, 重量级压缩<ul>
+<li>gzip, zstd, snappy, lz4</li>
+<li>寻找 bits 中的 pattern 压缩</li>
+<li>优点<ul>
+<li>实现简单</li>
+<li>压缩率很高，空间占用很小</li>
+</ul>
+</li>
+<li>缺点<ul>
+<li>高压缩率会降低执行时候的速度，CPU 花时间解压</li>
+<li>需要整个解压缩，不能只读取部分或者 seek</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Special purpose, 轻量级压缩<ul>
+<li>RLE, bitpacking, dictionary, FOR, delta</li>
+<li>寻找 data 中的 pattern</li>
+<li>优点<ul>
+<li>非常快</li>
+<li>在执行的时候能够发现某个 pattern</li>
+</ul>
+</li>
+<li>缺点<ul>
+<li>如果找不到 pattern，那么就不能压缩</li>
+<li>需要实现不同的压缩算法</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<p>DuckDB 团队采用了轻量级的压缩方案，在执行的时候寻找 pattern。</p>
+<p>压缩的粒度会在 row group 中的 column 级别上进行，整个过程分成两步：</p>
+<ol>
+<li>Analyze，找到最合适的压缩方法</li>
+<li>Compress，采用该压缩方法进行压缩</li>
+</ol>
+<p><img src="/duckdb_compression.png" srcset="/img/loading.gif" lazyload alt="image-20230502171838768"></p>
+<h1 id="Others"><a href="#Others" class="headerlink" title="Others"></a>Others</h1><p>这里留下一些坑，以后再学习 DuckDB 的过程中仔细学习再写博客总结。</p>
+<h2 id="Buffer-Manager"><a href="#Buffer-Manager" class="headerlink" title="Buffer Manager"></a>Buffer Manager</h2><p>DuckDB 的 buffer manager 是 lock-free 的（类似<a target="_blank" rel="noopener" href="https://db.in.tum.de/~leis/papers/leanstore.pdf">Lean Store </a>），粒度是 256KB 的级别，实现了下面这些功能：</p>
+<ul>
+<li>限制内存使用量</li>
+<li>当计算需要的时候 pin blocks 在内存中</li>
+<li>当不需要的时候 unpin blocks</li>
+</ul>
+<h2 id="Out-Of-Core"><a href="#Out-Of-Core" class="headerlink" title="Out-Of-Core"></a>Out-Of-Core</h2><p>DuckDB 支持在  <strong>larger-than-memory execution</strong>，因为是嵌入式 OLAP，所以需要考虑资源不够的情况。</p>
+<ul>
+<li>streaming engine</li>
+<li>当内存不够的时候从 hash join -&gt; sort merge join ，或者是一些 window 算法</li>
+</ul>
+<p>目标是为了达到优雅的性能下降，避免性能的急剧下降</p>
+<blockquote>
+<p>记得在哪看过这句话：“稳定的慢要比不稳定的快” 更好……</p>
+</blockquote>
+<h2 id="Transactions"><a href="#Transactions" class="headerlink" title="Transactions"></a>Transactions</h2><p>DuckDB 实现了 ACID 特性的事务，<a target="_blank" rel="noopener" href="https://db.in.tum.de/~muehlbau/papers/mvcc.pdf">基于 Hyper 的 MVCC 模型</a>，而且特别为了 vector processing 做了优化，DuckDB 支持到了 snapshot isolation 的隔离级别，采用了乐观的并发控制，如果修改了相同的行，那么就会 abort 当前的 transaction。</p>
+<p><img src="/duckdb_mvcc.png" srcset="/img/loading.gif" lazyload alt="image-20230502172541708"></p>
+<h2 id="External-Formats"><a href="#External-Formats" class="headerlink" title="External Formats"></a>External Formats</h2><p>DuckDB 还支持了直接从很多其他的格式中进行查询：Parquet, CSV, JSON, Arrow, Pandas, SQLite, Postgres, </p>
+<h2 id="Pluggable-Catalog"><a href="#Pluggable-Catalog" class="headerlink" title="Pluggable Catalog"></a>Pluggable Catalog</h2><p>DuckDB 能够支持直接 attach 不同数据库作为自己的 catalog 执行。</p>
+<h2 id="Pluggable-File-System-HTTP-x2F-Object-Store-Reads"><a href="#Pluggable-File-System-HTTP-x2F-Object-Store-Reads" class="headerlink" title="Pluggable File System + HTTP&#x2F;Object Store Reads"></a>Pluggable File System + HTTP&#x2F;Object Store Reads</h2><p>DuckDB 有一个可插拔的文件系统，能够直接从 HTTP&#x2F;S3&#x2F;Object store 中来做查询。</p>
+<h2 id="Extensions"><a href="#Extensions" class="headerlink" title="Extensions"></a>Extensions</h2><p>DuckDB 支持很多不同的插件，能够通过 INSTALL 和 LOAD来进行开关，可以使用 shared library 的方式进行加载。</p>
+<p>很多核心特性都是通过插件来实现的，例如：time zone, json, sqlite_scanner 等…</p>
+<h2 id="WASM"><a href="#WASM" class="headerlink" title="WASM"></a>WASM</h2><p>DuckDB 还有一个 WASM 的build，可以直接在浏览器中进行查询。</p>
+<h1 id="references"><a href="#references" class="headerlink" title="references"></a>references</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=bZOvAKGkzpQ&list=PLSE8ODhjZXjYzlLMbX3cR0sxWnRM7CLFn&index=22">Mark Raasveldt Talk at CMU 15721</a>, with <a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2023/slides/22-duckdb.pdf">slides</a></li>
+<li>M. Raasveldt, et al., <a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2023/papers/22-duckdb/2019-duckdbdemo.pdf">DuckDB: an Embeddable Analytical Database</a>, in <em>SIGMOD</em>, 2019</li>
+<li>M. Raasveldt, et al., <a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2023/papers/22-duckdb/p23-raasveldt-cidr20.pdf">Data Management for Data Science Towards Embedded Analytics</a>, in <em>CIDR</em>, 2020</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/duckdb/duckdb/issues/1583">Move to push-based execution model #1583</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=MA0OsvYFGrc">Push-Based Execution in DuckDB - Mark Raasveldt</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/614907875">pipeline执行引擎和一些工程优化</a> </li>
+<li><a target="_blank" rel="noopener" href="https://db.in.tum.de/~leis/papers/leanstore.pdf">Lean Store </a></li>
+<li><a target="_blank" rel="noopener" href="https://db.in.tum.de/~muehlbau/papers/mvcc.pdf">基于 Hyper 的 MVCC 模型</a></li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DuckDB/" class="category-chain-item">DuckDB</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/" class="print-no-link">#数据仓库</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DuckDB(0): 整体介绍</div>
+      <div>http://tanweime.com/2023/05/02/DuckDB-0-整体介绍/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>tanwei</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>May 2, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/05/03/%E6%A0%91%E8%8E%93%E6%B4%BE3b%E6%90%AD%E5%BB%BAopenwrt%E7%A7%91%E5%AD%A6%E4%B8%8A%E7%BD%91/" title="树莓派3b搭建openwrt科学上网">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">树莓派3b搭建openwrt科学上网</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/04/30/Photon/" title="Databricks Photon | Native C++ Query Engine for Lakehouse Systems">
+                        <span class="hidden-mobile">Databricks Photon | Native C++ Query Engine for Lakehouse Systems</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: '815a2b4d02b62f879ca0b65920416019'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

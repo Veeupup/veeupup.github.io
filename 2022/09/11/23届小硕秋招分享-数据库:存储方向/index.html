@@ -1,0 +1,793 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="秋招终于尘埃落定，整个过程经历了很久，在这里记录分享一下下自己的秋招过程。 在23届秋招过程中，幸运地收获了十几家公司的offer，大厂以及创业公司都涉猎了部分  阿里云，数据库内核 字节，数据库内核 百度，数据库内核 快手，基础架构 美团，大数据基础研发 京东，京东云存储 小红书，数据库内核 smartx，分布式存储 akuna，C++开发 metabit，data infra Starrock">
+<meta property="og:type" content="article">
+<meta property="og:title" content="23届小硕秋招分享-数据库&#x2F;存储方向">
+<meta property="og:url" content="http://tanweime.com/2022/09/11/23%E5%B1%8A%E5%B0%8F%E7%A1%95%E7%A7%8B%E6%8B%9B%E5%88%86%E4%BA%AB-%E6%95%B0%E6%8D%AE%E5%BA%93:%E5%AD%98%E5%82%A8%E6%96%B9%E5%90%91/index.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="秋招终于尘埃落定，整个过程经历了很久，在这里记录分享一下下自己的秋招过程。 在23届秋招过程中，幸运地收获了十几家公司的offer，大厂以及创业公司都涉猎了部分  阿里云，数据库内核 字节，数据库内核 百度，数据库内核 快手，基础架构 美团，大数据基础研发 京东，京东云存储 小红书，数据库内核 smartx，分布式存储 akuna，C++开发 metabit，data infra Starrock">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-09-11T11:28:36.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.216Z">
+<meta property="article:author" content="tanwei">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>23届小硕秋招分享-数据库/存储方向 - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="23届小硕秋招分享-数据库/存储方向"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-09-11 19:28" pubdate>
+          September 11, 2022 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          4.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          14 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">23届小硕秋招分享-数据库/存储方向</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>秋招终于尘埃落定，整个过程经历了很久，在这里记录分享一下下自己的秋招过程。</p>
+<p>在23届秋招过程中，幸运地收获了十几家公司的offer，大厂以及创业公司都涉猎了部分</p>
+<ul>
+<li>阿里云，数据库内核</li>
+<li>字节，数据库内核</li>
+<li>百度，数据库内核</li>
+<li>快手，基础架构</li>
+<li>美团，大数据基础研发</li>
+<li>京东，京东云存储</li>
+<li>小红书，数据库内核</li>
+<li>smartx，分布式存储</li>
+<li>akuna，C++开发</li>
+<li>metabit，data infra</li>
+<li>Starrocks，数据库内核</li>
+<li>SelectDB，数据库内核</li>
+<li>DolphinDB，数据库内核</li>
+<li>HashData，数据库内核</li>
+<li>MatrixOrigin，数据库内核</li>
+<li>tplink，研发</li>
+<li>..…</li>
+</ul>
+<p>下面分享一下自己在整个求职过程中的记录，自己的求职准备以及一些踩坑分享，本人技术水平和文章措辞水平都有限，整理出来作为对自己求职的一个阶段性总结。</p>
+<h1 id="基本情况"><a href="#基本情况" class="headerlink" title="基本情况"></a>基本情况</h1><p>先简单介绍一下自己的情况，北航计算机小硕，无paper无竞赛，lc 800 题左右（困难题还是很困难TAT），写过一些公开课，有过一些数据库实习，主要写<code>C++</code>和<code>Rust</code>。</p>
+<p>上大学开始才拥有一台笔记本，本科阶段基本摸鱼度过，折腾过一些脚本语言和基本的Web开发，研究生阶段开始自学入门数据库&#x2F;存储相关的领域，觉得很有意思。</p>
+<p>几次实习经历中浅浅涉猎了 kv，数仓（AP）以及mysql的开发和学习，也给了我在数据库领域更大的视角和更丰富的工程实践。</p>
+<p>这里也推荐大家如果有条件要尽可能多的去实习，去工业界能够更快地了解业界的前沿方向和整体行业市场情况，非常有利于的就业（如果有学术理想，那是另外一个道路了）。</p>
+<h1 id="记录"><a href="#记录" class="headerlink" title="记录"></a>记录</h1><p>自己的秋招开始的很早，因为从暑期实习就大概看出来今年的就业市场不太景气（但是也没预料到后来没想到有这么不景气… 。整个秋招面试大概有80+场左右（面到后面人已经麻了，刚开始还比较紧张，后面面多了之后…自己就完全放松了…有时候面试之前还在打游戏-_-||）罪过罪过……没有不尊重公司的意思…</p>
+<p>时间线大概如下：</p>
+<ul>
+<li><p>五月底开始刷题找手感</p>
+</li>
+<li><p>六月中下旬开始写简历和基础复习，关注各大公司招聘和各种招聘帖</p>
+</li>
+<li><p>七月初开始投递简历，面试主要集中在七八九月</p>
+</li>
+</ul>
+<p>这里就记录下部分公司的面试体验，好多公司后来都有点忘记了</p>
+<p><strong>阿里云数据库</strong>：阿里云暑期实习，是电话面试，所以只面了暑期，暑期一共两轮面试都比较基础，一面基本就是基础概念的考察，二面挺有意思，从一个很简单的需求出发进行一个日志系统的设计，这里基本感觉就是靠积累和知识的广度尽可能多吹一吹了…，后来实习转正了</p>
+<p><strong>字节数据库</strong>：字节一共有五轮技术面试，前两轮技术面试都问的比较基础，基本就是数据库的各种基础概念的考察和做题，三面开始我才觉得面试开始聊一些其他的东西，聊一些更big picture的设计，面试官开始从系统设计的角度和我讨论某个需求方案的设计，讨论各种方案的trade off，聊TP，AP系统的界限设计等，总体也是非常不错的面试体验。</p>
+<p><strong>快手服务架构</strong>：一开始内推快手数据库结果内推人说没hc了……就投了一个C++开发，被捞去服务架构那边，面试聊的也比较基础，一面问了很多细节的生产环境的数据，但是自己确实对当时组里的线上实际情况了解很少（也了解不到，只能推断，印象比较深刻的是二面问了高性能服务器的设计，</p>
+<p><strong>美团大数据研发</strong>：暑期拿到offer没去，延续暑期实习的组投递的，组里的leader非常好，不论是暑期还是秋招面试，都像聊天一样聊，给我聊行业内大数据的发展和现状，感觉像是来学习而不是面试，体验非常好，如果自己最开始做大数据方向，也许就去了</p>
+<p><strong>京东云存储</strong>：京东面试三轮，一开始给我推到了java岗位……我简历上都没出现 java 这个词，后来被推去京东云那边做对象存储的组聊了三轮拿了offer</p>
+<p><strong>小红书数据库</strong>：小红书这两年发展很快，前两轮面试也都是基本的写题和简历，聊聊实习项目基本都差不多，没问太多额外的东西，但是第三轮面试面试官似乎不是做db的，所以只能聊聊宏观上的一些架构取舍，没能聊太多细节，另外，他们今年开的包确实都很大</p>
+<p><strong>smartx</strong>：一直很有好感的一家创业公司，从去年日常实习就投递拿到分布式存储offer了，印象十分深刻，还依稀记得当时一面面了一小时四十五分钟，面得口干舌燥，面试官的问题也一直刨根问底，一直问到非常非常底层的实现，当时就发现自己的基础并没有很好的串起来，所以后来自己一直加强基础的学习。。今年秋招面试就非常有趣了，一面随便聊聊，二面就是面试官前辈（还是去年的面试官）给我分享了不少smartx在做的事情，整个过程基本就是他在分享行业以及公司的信息。</p>
+<p><strong>akuna</strong>：因为有朋友在那里实习，所以内推了下，三轮纯英文技术面试，每轮基本上就是写一两道题，题目并不是很难，工程性比较强，比较考验英文交流和写代码的习惯</p>
+<p><strong>StarRocks</strong>：一家做的很棒的数仓创业公司，面的查询优化组，一共有五轮面试，每轮面试的体验都非常好，都能明显感觉到对面的面试官非常懂数据库，不论是从细节层面抑或是宏观层面聊db内核的各个方面，都能够聊的非常愉快，从执行引擎到存储、到分布式数据库的架构的宏观理解、或者是newsql的一些设计，聊的非常舒服的几次面试。</p>
+<p><strong>SelectDB</strong>：面的存储组，三轮面试，感觉面试官对我的经历也很感兴趣，所以和面试官非常能聊得来，也是我最早收到的offer之一，目前的发展也非常迅猛</p>
+<p><strong>百度</strong>：找前辈内推了百度的数据库，一面聊的很好，但是二面开始让我有些不太舒服，面试官似乎不太在乎我做的东西和简历上的内容，几乎不问我的简历，最后还硬问我了一些linux下命令的各种参数代表的含义，……不太懂硬问linux命令参数的意义。。也可能是面试官希望我能够直接去参与到系统的线上运维工作中去😄</p>
+<p><strong>DolphinDB</strong>：很早因为胡神了解到这家公司，暑期实习和秋招都进行投递了，面试流程和面试体验也属于一流的公司，推荐</p>
+<p><strong>unknown</strong>：面了一家杭州的数据库公司（不提名字）…前两轮技术面都挺正常体验也很好，但是最后去线下去和老板当面聊的时候，本人被当场pua了，上升到人生层面的那种…这也是我秋招过程中最糟糕的一次面试经历😓</p>
+<h1 id="求职思路分享"><a href="#求职思路分享" class="headerlink" title="求职思路分享"></a>求职思路分享</h1><p>求职的部分主要分为几个方面，都是出于我自己有限的经验，我觉得对于像我这种资质普通，大学之前都没接触计算机的同学应该是比较好的思路，如果是大神请略过…（很羡慕很多大学之前就接触过计算机、竞赛的同学，那是非常好的经历，可以减少很多入门时的坑）</p>
+<p>先分享一下在我的视角里面面试官或者公司希望招到的应届生的画像（反侦察</p>
+<p>一个<strong>基础扎实</strong>（计算机基础、数据结构算法），有<strong>相关领域的实习</strong>，或者有等价的比较<strong>有价值的比赛或者（开源）项目</strong>，对<strong>业内工业界有一些了解或参与</strong>（加分项）的应届生，是大多数公司都愿意招收培养的应届生。</p>
+<p>当然除此之外还有一些不可忽视的软技能，就比如说如何在面试的时候如何和面试官进行高效有效的沟通，如何更快更高效的展示自己的价值等</p>
+<h2 id="前期准备"><a href="#前期准备" class="headerlink" title="前期准备"></a>前期准备</h2><ul>
+<li>计算机基础</li>
+</ul>
+<p>对于应届生来说，最重要的就是把基础打牢了，不要在学习阶段太迷恋于应用层的各种中间件或者框架，因为工作之后有的是时间去学习和实践，在学校期间最为重要的就是把几门基础课上好，特别是 <strong>操作系统、数据库、计算机网络、编译原理</strong>，最好能上一些名校的公开课做做对应的 lab（可以看看这个<a target="_blank" rel="noopener" href="https://csdiy.wiki/">自学网站</a>），理解才会更深一些，不过现在在 infra 方面同学基本已经把这个方面的课程刷爆了，在之前做过 lab 就是优势的时代感觉一去不复返，已经快成标配了</p>
+<ul>
+<li>刷题</li>
+</ul>
+<p>刷题要趁早，可以在 leetcode 开个会员督促自己学习，刷一刷经典的题单，多打打周赛，尽量不要让做题成为自己的短板。</p>
+<ul>
+<li>参与开源项目</li>
+</ul>
+<p>参与有价值的开源项目是妥妥的加分项，一般来说开源项目的质量都比闭源的更高，而且带来的影响力也比闭源项目要好得多，能够直接向其他人展示你的代码能力，也能认识更多志同道合的朋友一起学习</p>
+<ul>
+<li>参加比赛</li>
+</ul>
+<p>有时间可以参加各种业内的比赛，可以关注开源之夏、阿里天池比赛、miniob、talent plan等，如果能拿到名次那将是和面试官吹牛的最好方式</p>
+<h2 id="找实习"><a href="#找实习" class="headerlink" title="找实习"></a>找实习</h2><p>如果有机会一定要多去实习，实习阶段的试错成本是最低的，能够让你更快确定以后自己想要的职业和发展的方向。</p>
+<p>找实习的前期一定要做好准备，从简历准备、基础复习、刷题找手感几个方面分别做好，实习基本就没啥问题。</p>
+<p>准备简历时，首先书写一定要突出重点，将能够体现自己价值、水平的部分写在前面，必要时可以用加粗等字体表明，不相关的经历（例如学生会，各种杂活）可以不写，主要是写了也没啥用，……面试官也都懂，尽量用量化的指标去度量自己的成果；其次写简历切忌多和杂，对于写到简历上的东西一定都要非常了解，对于每段经历和都要做好充足的准备，对于面试官来说，他不需要你样样都懂，但是需要你写上去的东西都非常了解，举个例子，例如写上：“了解LSMTree存储引擎”，那么最好将LSM本身的内容、工业界的实践、和BTree的比较、存储引擎的抽象、以及学术界LSMTree 的一些研究进展都可以做一些相关了解，如果被问到那将会是非常大的亮点，这样在面试的时候就能够完全不慌，当然准备是需要时间的，所以建议自己多做一些整理，经过找实习和秋招一两年的时间也将会积累起不少的笔记。</p>
+<p>基础的复习时，建议从两个方面入手，首先是过一些经典的书籍和课程的notes、PPT等，其次是多搜集各种面经上的问题。在经典的课程下建立起一个大纲，然后刷面经的过程中将不会的问题归类和整理，问题虽然看起来多，但是在看过足够多的面经之后你将会发现，反反复复就是那么些问题，然后从大纲出发建立起整体的脉络。</p>
+<p>刷题找手感，刷题是一个永远避不开的话题。特别是在校招当中，做题尤其重要，对于一个校招生，本身就没有什么工程经验和优势，如果连基础的算法题都写不出来，那么面试通过的可能性非常低^ ^（做数据库感觉一般遇到的算法题都不是很难）。</p>
+<h2 id="秋招"><a href="#秋招" class="headerlink" title="秋招"></a>秋招</h2><p>秋招的准备整体和实习差不多，但是一定要注意提前准备和时间线的安排。</p>
+<ul>
+<li><p>尽早关注一些秋招的公司开启的帖子和博客，一般每年秋招开始前牛客和github都会有，可以自己关注一下，同时对于自己特别感兴趣的公司列一些list多关注，记住，投递都是越早越好，赶早不赶晚。</p>
+</li>
+<li><p>多找内推。尽可能找认识的师兄师姐内推，不然面试排期都会排的很晚</p>
+</li>
+<li><p>mock面试。正式面试之前可以多找水平相近或者水平更高的同学相互mock，做一些讲简历经历和问题挖掘。</p>
+</li>
+</ul>
+<h2 id="面试心得"><a href="#面试心得" class="headerlink" title="面试心得"></a>面试心得</h2><p>谈谈自己在面试的时候刻意注意的一些点。</p>
+<ul>
+<li>STAR法则相关。首先对每一段经历，首先要站在全局的角度去理解讲述整个系统的架构设计，解决的核心问题等；其次对于每一项task，要利用STAR原则去讲述每段经历，必要时候可以写下来自己多排练，同时要做一定的拓展，也就是相似的问题多去搜索和思考，思考解决的方法和设计是否有更好的方案；更重要的是对其中涉及到的基础技术要做深入的了解，而不要只是一些简单的使用。</li>
+<li>不要不懂装懂。每个人都有不懂的地方，不懂的地方可以直接说明，切忌切忌不懂装懂，但是对于不会的问题可以将其引入到自己了解到的类似的问题、类似的原理，说明自己的理解即可。</li>
+<li>不紧不慢，逻辑清晰。要记住面试其实是一个沟通的过程，是人和人的沟通，并不是闭卷考试，要努力做到说话不紧不慢，回答每个问题都要逻辑清晰的去思考，想好再说，最好形成自己的方法论，这样才能遇到什么问题都能顺利接下。</li>
+<li>保持平视的心态。^ ^</li>
+</ul>
+<h1 id="数据库学习"><a href="#数据库学习" class="headerlink" title="数据库学习"></a>数据库学习</h1><p>聊一聊自己认为在入门数据库时候的资料和学习的路线，</p>
+<ul>
+<li><p>CMU15445</p>
+<ul>
+<li>明星之课，最好的数据库入门教程，除了做里面的lab之外，一定好好上课和看书，这门课的意义绝不仅仅是 lab，而更重要的是对于初学者更快的更完整的入门构建起整个数据库的框架结构</li>
+</ul>
+</li>
+<li><p>CMU15721</p>
+<ul>
+<li>andy的数据库进阶课，有非常多的经典论文，非常推荐值得阅读，如果之后要做数据库方向，一定要开始读论文，这里面的论文都非常经典，读不完全集论文可以先读课程重点推荐的论文，相信我，你不会后悔开启这个旅程的</li>
+</ul>
+</li>
+<li><p>MIT6.824&#x2F;tinykv</p>
+<ul>
+<li>这两年分布式系统非常火，数据库也和分布式系统结合非常紧密，有余力可以学习下</li>
+</ul>
+</li>
+<li><p>开源项目</p>
+<ul>
+<li>leveldb：还自己自己最早读完的代码就是 leveldb，入门数据库推荐，代码量很小，静下心来很快就能读完，（不过常读常新，有不少细节还是回顾才意识到的</li>
+<li>pg：pg的代码读的不多，但是组织结构确实比之后接触到的 mysql 的代码组织上更容易阅读一些，TP经典推荐</li>
+<li>duckdb：如果想看看 AP 数据库的设计，可以尝试开始看看 duckdb，代码结构非常清晰</li>
+<li>就不推荐太多了，优秀的项目实在太多，这里只推荐最经典的一些…</li>
+</ul>
+</li>
+<li><p>其他</p>
+<ul>
+<li>其实如果能扎实学习下上面的东西，同时<strong>把计算机基础打牢</strong>，找到一份数据库的实习&#x2F;工作就肯定没问题了，但是我相信想要做数据库方向的同学肯定经历更加充沛也非常卷，我也认识很多其他的同学做了非常多的课和项目</li>
+</ul>
+</li>
+</ul>
+<p>相信每一份耕耘都会有一份收获~</p>
+<h3 id=""><a href="#" class="headerlink" title=""></a></h3>
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%AE%B0%E5%BD%95/" class="category-chain-item">记录</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>23届小硕秋招分享-数据库/存储方向</div>
+      <div>http://tanweime.com/2022/09/11/23届小硕秋招分享-数据库:存储方向/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>tanwei</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>September 11, 2022</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/12/26/2022%E6%80%BB%E7%BB%93/" title="2022总结">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">2022总结</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/04/29/Join%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/" title="Join算法笔记整理">
+                        <span class="hidden-mobile">Join算法笔记整理</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: '25d4d261d8c119c187123f100f319c32'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

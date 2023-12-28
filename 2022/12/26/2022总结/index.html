@@ -1,0 +1,699 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="竟然又到了年底了，2022又过去了，今年是非常充实忙碌的一年，总体来说就是秋招+毕业两件大事，想想去年的这个时候是2021年底，刚刚翻看之前的总结又感叹着时间飞逝，自己又老了一岁…今年的年度总结多了一个复盘环节：流水账，复盘，good stuff and bad stuff。 流水账今年年初回家很早，元旦的时候应该就在家里，在家呆了两个月，这两个月里面还是主要在给 databend 实习写代码。回">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2022总结">
+<meta property="og:url" content="http://tanweime.com/2022/12/26/2022%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="竟然又到了年底了，2022又过去了，今年是非常充实忙碌的一年，总体来说就是秋招+毕业两件大事，想想去年的这个时候是2021年底，刚刚翻看之前的总结又感叹着时间飞逝，自己又老了一岁…今年的年度总结多了一个复盘环节：流水账，复盘，good stuff and bad stuff。 流水账今年年初回家很早，元旦的时候应该就在家里，在家呆了两个月，这两个月里面还是主要在给 databend 实习写代码。回">
+<meta property="og:locale">
+<meta property="og:image" content="http://tanweime.com/2022/12/26/2022%E6%80%BB%E7%BB%93/photo.png">
+<meta property="article:published_time" content="2022-12-26T13:21:45.000Z">
+<meta property="article:modified_time" content="2023-12-28T12:25:26.209Z">
+<meta property="article:author" content="tanwei">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/2022/12/26/2022%E6%80%BB%E7%BB%93/photo.png">
+  
+  
+  
+  <title>2022总结 - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="2022总结"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-12-26 21:21" pubdate>
+          December 26, 2022 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          1.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          6 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">2022总结</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>竟然又到了年底了，2022又过去了，今年是非常充实忙碌的一年，总体来说就是秋招+毕业两件大事，想想去年的这个时候是2021年底，刚刚翻看之前的总结又感叹着时间飞逝，自己又老了一岁…今年的年度总结多了一个复盘环节：流水账，复盘，good stuff and bad stuff。</p>
+<h1 id="流水账"><a href="#流水账" class="headerlink" title="流水账"></a>流水账</h1><p>今年年初回家很早，元旦的时候应该就在家里，在家呆了两个月，这两个月里面还是主要在给 databend 实习写代码。回忆起来，在几家公司的实习经历里面，自己最喜欢也是呆的最舒服的就是在 databend 了，还记得当时每天早上起来坐地铁去奥森的办公室，最开始去的时候办公室才刚刚弄好，然后基本上也没什么人，大部分时间也就是和虎哥、wangyin哥以及yijun，xp哥和f叔有时候会来。还记得有一张非常青涩的合影，在这里实习也非常开心。大部分时间每天就去楼下吃字节的食堂，偶尔也会去吃吃其他的饺子或者是面啥的。不论有啥问题都可以随时去找虎哥和其他的几个大佬一起请教和讨论，写代码的效率也很高。在这个经历中，最应该感谢的人就是虎哥和sundy哥了，虎哥把我拉过去让我能够在 databend 实习，非常喜欢虎哥待人的方式，没有一点架子，对人也非常热情非常开放，如果以后还有机会还想跟着虎哥做；sundy哥在我的整个实习过程中帮助了我非常多，sundy是我遇到的最好的导师或者叫mentor了，技术非常强的同时也非常会带人，也非常愿意把好的活交给实习生来做，后来也一直请教了他很多问题。</p>
+<p>希望 databend 发展越来越好！</p>
+<p>另外就是在这个寒假终于把驾照考完了，拖了好久的驾照终于拿到手了！</p>
+<img src="photo.png" srcset="/img/loading.gif" lazyload alt="databend合影" style="zoom:50%;" />
+
+<p>然后到了三月，这个时候大概停了一个月的实习，开始写简历刷题开始找实习，当时也面了好几家公司，不过很早就拿到了当时非常想去的阿里云的 polar-x 的offer，也就很早就结束了找暑期实习的时间。当时一共是经历了一个月，从开始准备到最终面试结束拿到offer，后来四月和五月基本继续在 databend 实习，一直到五月底的时候结束实习。</p>
+<p>记得在五月份的时候北京疫情突然比较严重，学校开始劝返，我就在这个时候刚好向老师申请了回家，就去杭州实习了，在五月底的时候到达了杭州，实习就从六月一直到八月。刚开始去杭州还担心没有认识的人会比较难受，后来发现是多余的担心，当时去了之后发现一些本科同学和朋友也在杭州，也经常在周末一起聚。在杭州的时候自己也是第一次自己一个人租房自己生活，也是一段不错的经历，不过还是更希望能够更快和女朋友在一起。</p>
+<p>在 polarx 的时候当时是做 innodb 相关的一些工作，开始两周读了些书写了些简单的代码，后来分配了一个还不错的活，做完了之后发现大家对实习生的期待非常少，其实预期并不期待实习生能够做什么太多的事情，这也让我其实有点难受…大家还是期待实习生打打杂，稍微做点小活就行了，组里整体的氛围其实比较卷，实习阶段基本每天都是九点之后才能走，也没有太多自己个人的时间了。</p>
+<p>六月底在忙完了毕设的中期答辩之后，七月初我开始了正式的秋招准备和面试，这是一场持久的战斗……</p>
+<p>当时一边实习一边准备秋招确实是自己今年效率最高的时候，白天实习写代码，实习每天晚上回去写简历，复习知识点和刷题，每天基本都是十二点之后才上床，周末去公司继续准备简历和面试。然后还要在这个阶段投递了不少公司，后来证明是一个非常正确的决定，所有的公司我基本都是最早的一批投递的，今年的秋招形势是很严峻的，只不过我们基本都是后知后觉了。秋招的主要面试也是在七月和八月，自己在几十场面试中也像打怪升级一样慢慢变得从容起来，整体来说秋招是比较顺利的，面试绝大部分都能顺利通过，也让我这段时间的心情也一直比较高涨。</p>
+<p>八月底回家呆了几天就回学校了，九月份的时候自己其实基本该拿到的offer都拿到了，也就在九月中旬开始全身心投入进去做毕设，毕设一共从九月中旬到十二月中旬，一共差不多三个月的时间，做毕设的每天都是担心自己能不能毕业🎓..万幸最终还是顺利毕业了</p>
+<p>今年最后的秋招开奖环节真是一个比一个能拖，大部分公司今年都开的比往年更晚，导致在十月底十一月的时候很难完全集中精力，每天想的都是：“怎么还不开奖” 这种事情，所幸大部分offer都开的比较满意 ^ ^。</p>
+<p>到了十二月，这个时候每天关注的都是答辩的事情，在快要答辩的时候，突然宣布放开了，在放开之后的几天之内，整个学校大部分都阳了一遍，大家见面打招呼都变成了问候是不是阳性，而这在一周之前都是不敢想的。在答辩结束之后在冷风里和舍友以及同学出去拍了些照片当做离校前的留恋，然后就离开了寒冷的北京回家了。</p>
+<h1 id="重点复盘"><a href="#重点复盘" class="headerlink" title="重点复盘"></a>重点复盘</h1><h2 id="秋招"><a href="#秋招" class="headerlink" title="秋招"></a>秋招</h2><p>秋招中自己做的好的地方在于提前规划和行动很早，这里就不再仔细聊，自己之前写了<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/593252104">一篇文章</a>总结。</p>
+<h2 id="毕设"><a href="#毕设" class="headerlink" title="毕设"></a>毕设</h2><p>毕设当中，自己做的不好的地方在于没有提前规划，大部分工作都堆到了最后才完成，导致最后自己的时间非常紧张。</p>
+<h1 id="经验和教训"><a href="#经验和教训" class="headerlink" title="经验和教训"></a>经验和教训</h1><h2 id="good-stuff"><a href="#good-stuff" class="headerlink" title="good stuff"></a>good stuff</h2><ul>
+<li>做事情都比较有规划，做事能够有提前量</li>
+<li>做事效率比较高</li>
+</ul>
+<h2 id="bad-stuff"><a href="#bad-stuff" class="headerlink" title="bad stuff"></a>bad stuff</h2><ul>
+<li>做决定不太果断，不太能够很快做出决定</li>
+<li>不太自律，经常熬夜导致第二天效率低下</li>
+<li>太早亮出底牌</li>
+<li>长期的事情后期容易被打乱，导致不能坚持</li>
+</ul>
+<h1 id="New-Year"><a href="#New-Year" class="headerlink" title="New Year"></a>New Year</h1><p>新的一年，新的开始，要继续努力，在新年之前再定下新年的flag，对新生活充满期待！ ^ ^</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/" class="category-chain-item">年度总结</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>2022总结</div>
+      <div>http://tanweime.com/2022/12/26/2022总结/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>tanwei</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>December 26, 2022</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/02/06/snowflake-NSDI-20-Building-An-Elastic-Query-Engine-on-Disaggregated-Storage/" title="Snowflake NSDI&#39;20 | Building An Elastic Query Engine on Disaggregated Storage">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Snowflake NSDI&#39;20 | Building An Elastic Query Engine on Disaggregated Storage</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/09/11/23%E5%B1%8A%E5%B0%8F%E7%A1%95%E7%A7%8B%E6%8B%9B%E5%88%86%E4%BA%AB-%E6%95%B0%E6%8D%AE%E5%BA%93:%E5%AD%98%E5%82%A8%E6%96%B9%E5%90%91/" title="23届小硕秋招分享-数据库/存储方向">
+                        <span class="hidden-mobile">23届小硕秋招分享-数据库/存储方向</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: 'f8f347adae297f7ef17fbed8921cca77'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>
