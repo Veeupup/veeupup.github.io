@@ -26,7 +26,7 @@
 <meta property="og:image" content="http://tanweime.com/image-20230310224134113.png">
 <meta property="og:image" content="http://tanweime.com/MonetDBx100.png">
 <meta property="article:published_time" content="2023-04-30T07:13:04.000Z">
-<meta property="article:modified_time" content="2023-12-28T12:25:26.251Z">
+<meta property="article:modified_time" content="2024-12-25T13:09:53.707Z">
 <meta property="article:author" content="tanwei">
 <meta property="article:tag" content="数据仓库">
 <meta property="article:tag" content="执行引擎">
@@ -225,7 +225,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          2.7k 字
+          2.5k 字
         
       </span>
     
@@ -237,7 +237,7 @@
         
         
           <!-- compatible with older versions-->
-          9 分钟
+          8 分钟
         
       </span>
     
@@ -407,63 +407,55 @@
 <li><p>竖直方向</p>
 <ul>
 <li><p>用前面 ck 的图举例，对于一个很长的 pipeline，可以同时执行一条 pipeline 上的多个算子，例如</p>
-</li>
-<li><pre><code class="hljs">source1 -&gt; transform1 -&gt; transform2 -&gt; transform3 -&gt; ...
-<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs perl"><br>    可以同时执行一条 <span class="hljs-keyword">pipe</span> 上的 source1 算子和 transform2 算子，这就是所谓的竖直方向的并行<br><br><span class="hljs-comment">## NUMA-aware (data centric)</span><br><br>在现代的多核CPU架构中，由于 NUMA 架构的特点，不同CPU访问不同内存区域的速率有比较大的差异（通过 CPU <span class="hljs-keyword">socket</span> 传输数据）。<br><br>所以希望能够尽可能以数据为中心，将针对同一条 pipeline 中的多个算子的都调度到同一个 CPU 上执行（CPU 亲和性），这样同一条 pipeline 上的多个算子所实际运行的 thread 都尽可能在同一个 CPU 上执行，所访问的数据也都在这部分 CPU 更近的内存中，会有更高执行效率。<br><br><span class="hljs-comment">## work-stealing / delay scheduling </span><br><br>在 Pipeline 执行的时候，每个 <span class="hljs-keyword">pipe</span> 中的任务执行上可能出现各种情形的 skew，虽然在 pipeline 开始水平切分的时候尽可能将数据进行了平均切分，但是通过每个算子之后，剩余的数据可能不同，例如通过一个 filter 算子之后，pipeline 中的两个 <span class="hljs-keyword">pipe</span> 之间的数据出现了极度不均衡，例如下面这种情况，第一个 <span class="hljs-keyword">pipe</span> 的 filter 之后只有 <span class="hljs-number">1</span>% 的数据，那么很快这个<span class="hljs-keyword">pipe</span> 就计算完毕了。<br><br></code></pre></td></tr></table></figure>
-</code></pre>
+<p><code>source1 -&gt; transform1 -&gt; transform2 -&gt; transform3 -&gt; ...</code></p>
 </li>
 </ul>
 </li>
 </ul>
-<p>pipe1: source1 -&gt; filter – selectity: 1% —&gt; transform2 -&gt; </p>
-<p>pipe2: source2 -&gt; filter – selectity: 99% —&gt; transform2 -&gt; </p>
-<p>pipe3:  source3 -&gt; filter – selectity: 50% —&gt; transform2 -&gt; </p>
-<p>…</p>
-<pre><code class="hljs">
-在这种情况下，pipe1 就可以尝试 steal pipe3 中的 task queue 中的任务来执行，不让每个 CPU 闲置，提高 CPU 的利用率。
+<p>可以同时执行一条 pipe 上的 source1 算子和 transform2 算子，这就是所谓的竖直方向的并行</p>
+<h2 id="NUMA-aware-data-centric"><a href="#NUMA-aware-data-centric" class="headerlink" title="NUMA-aware (data centric)"></a>NUMA-aware (data centric)</h2><p>在现代的多核CPU架构中，由于 NUMA 架构的特点，不同CPU访问不同内存区域的速率有比较大的差异（通过 CPU socket 传输数据）。</p>
+<p>所以希望能够尽可能以数据为中心，将针对同一条 pipeline 中的多个算子的都调度到同一个 CPU 上执行（CPU 亲和性），这样同一条 pipeline 上的多个算子所实际运行的 thread 都尽可能在同一个 CPU 上执行，所访问的数据也都在这部分 CPU 更近的内存中，会有更高执行效率。</p>
+<h2 id="work-stealing-x2F-delay-scheduling"><a href="#work-stealing-x2F-delay-scheduling" class="headerlink" title="work-stealing &#x2F; delay scheduling"></a>work-stealing &#x2F; delay scheduling</h2><p>在 Pipeline 执行的时候，每个 pipe 中的任务执行上可能出现各种情形的 skew，虽然在 pipeline 开始水平切分的时候尽可能将数据进行了平均切分，但是通过每个算子之后，剩余的数据可能不同，例如通过一个 filter 算子之后，pipeline 中的两个 pipe 之间的数据出现了极度不均衡，例如下面这种情况，第一个 pipe 的 filter 之后只有 1% 的数据，那么很快这个pipe 就计算完毕了。</p>
+<figure class="highlight xl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs xl"><span class="hljs-function"><span class="hljs-title">pipe1</span>: source1 -&gt;</span> <span class="hljs-function"><span class="hljs-title">filter</span> -- selectity: 1% ---&gt;</span> <span class="hljs-function"><span class="hljs-title">transform2</span> -&gt;</span> <br><br><br><span class="hljs-function"><span class="hljs-title">pipe2</span>: source2 -&gt;</span> <span class="hljs-function"><span class="hljs-title">filter</span> -- selectity: 99% ---&gt;</span> <span class="hljs-function"><span class="hljs-title">transform2</span> -&gt;</span> <br><br><br><span class="hljs-function"><span class="hljs-title">pipe3</span>:  source3 -&gt;</span> <span class="hljs-function"><span class="hljs-title">filter</span> -- selectity: 50% ---&gt;</span> <span class="hljs-function"><span class="hljs-title">transform2</span> -&gt;</span> <br><br></code></pre></td></tr></table></figure>
 
-working stealing 的一个简单优化是 delay scheduling：有的时候并不需要立即去执行 working stealing，而是稍微等待一会，再去尝试拿任务，这种方式在工程实践上被证明是非常有效的，因为有的时候可能隔壁的 CPU 只是稍微慢了那么一点点，多等一下等ok了。
 
-但是这个方式也不是绝对的，有的时候，work stealing 机制也会带来副作用，例如在 SAP HANA 中，他们提出，他们使用的机器有 256 nodes，这个时候 work stealing 反而会降低效率，因为需要从跨 numa 的 cpu socket 去更远的内存中拿到数据，work stealing 得不偿失。 
 
-## complication
-
-编译执行，在不少高性能的 AP 中有实现，例如：MS hekaton，sqlite，presto，pelton 等，实现的方式也是有多种：
-
-* 手动改写成 C/C++ or 某种 DSL
-*  JVM-based JIT
-* LLVM-based
-
-在 pipeline 中，当可以将任务表达成一个 DAG 之后，就可以编译生成机器代码执行，不再做显式的解释执行调度了。编译执行的效果很好，但是实现起来也通常比解释执行更加困难。
-
-# 一个 naive 的实现
-
-说了这么多，还没有介绍 pipeline 具体的实现是怎样的，在工业实践中，比较好的实现有
-
-* [Clickhouse](https://github.com/ClickHouse/ClickHouse/tree/c2611c3ba940cedf7ddc225e805e45fd77c59977/src/QueryPipeline) ，[databend](https://github.com/datafuselabs/databend/tree/main/src/query/pipeline) ，[datafusion](https://github.com/apache/arrow-datafusion/tree/ac5676f74bfac89707642f9221d35899b7c2c321/datafusion/core/src/scheduler/pipeline)，[DuckDB](https://github.com/duckdb/duckdb/tree/88b1bfa74d2b79a51ffc4bab18ddeb6a034652f1/src/parallel)
-
-感兴趣的读者可以自己阅读这些 pipeline 的实现。
-
-我自己也简单实现一个的版本来学习 pipeline，并没有实现太多先进的特性，只是出于学习理解的目的实现一个基础的版本：https://github.com/Veeupup/naive-pipeline-execution
-
-# 相关资料
-
-* [MonetDB/X100: Hyper-Pipelining Query Execution](https://www.cidrdb.org/cidr2005/papers/P19.pdf)
-
-* [Morsel-Driven Parallelism: A NUMA-Aware Query Evaluation Framework for the Many-Core Age](https://15721.courses.cs.cmu.edu/spring2019/papers/14-scheduling/p743-leis.pdf)
-
-* [ClickHouse Query Execution Pipeline PPT](https://presentations.clickhouse.com/meetup24/5.%20Clickhouse%20query%20execution%20pipeline%20changes/)
-
-  * [bilibili 搬运对应的演讲]( https://www.bilibili.com/video/BV147411U7A3/?vd_source=2be11642e5a095e9c7f08f3b64cc4b1a)
-
-  * [Clickhouse CTO Alexey 解释 pipeline](https://github.com/ClickHouse/ClickHouse/issues/34045)
-
-* [By 虎哥 ClickHouse和他的朋友们（4）Pipeline处理器和调度器](https://bohutang.me/2020/06/11/clickhouse-and-friends-processor/)
-
-* [# ClickHouse 源码学习之Pipeline执行引擎](https://zhuanlan.zhihu.com/p/401658490) \
-
-* [[OLAP 任务的并发执行与调度](https://io-meter.com/2020/01/04/olap-distributed/)](https://io-meter.com/2020/01/04/olap-distributed/)
-</code></pre>
+<p>在这种情况下，pipe1 就可以尝试 steal pipe3 中的 task queue 中的任务来执行，不让每个 CPU 闲置，提高 CPU 的利用率。</p>
+<p>working stealing 的一个简单优化是 delay scheduling：有的时候并不需要立即去执行 working stealing，而是稍微等待一会，再去尝试拿任务，这种方式在工程实践上被证明是非常有效的，因为有的时候可能隔壁的 CPU 只是稍微慢了那么一点点，多等一下等ok了。</p>
+<p>但是这个方式也不是绝对的，有的时候，work stealing 机制也会带来副作用，例如在 SAP HANA 中，他们提出，他们使用的机器有 256 nodes，这个时候 work stealing 反而会降低效率，因为需要从跨 numa 的 cpu socket 去更远的内存中拿到数据，work stealing 得不偿失。 </p>
+<h2 id="complication"><a href="#complication" class="headerlink" title="complication"></a>complication</h2><p>编译执行，在不少高性能的 AP 中有实现，例如：MS hekaton，sqlite，presto，pelton 等，实现的方式也是有多种：</p>
+<ul>
+<li>手动改写成 C&#x2F;C++ or 某种 DSL</li>
+<li>JVM-based JIT</li>
+<li>LLVM-based</li>
+</ul>
+<p>在 pipeline 中，当可以将任务表达成一个 DAG 之后，就可以编译生成机器代码执行，不再做显式的解释执行调度了。编译执行的效果很好，但是实现起来也通常比解释执行更加困难。</p>
+<h1 id="一个-naive-的实现"><a href="#一个-naive-的实现" class="headerlink" title="一个 naive 的实现"></a>一个 naive 的实现</h1><p>说了这么多，还没有介绍 pipeline 具体的实现是怎样的，在工业实践中，比较好的实现有</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/tree/c2611c3ba940cedf7ddc225e805e45fd77c59977/src/QueryPipeline">Clickhouse</a> ，<a target="_blank" rel="noopener" href="https://github.com/datafuselabs/databend/tree/main/src/query/pipeline">databend</a> ，<a target="_blank" rel="noopener" href="https://github.com/apache/arrow-datafusion/tree/ac5676f74bfac89707642f9221d35899b7c2c321/datafusion/core/src/scheduler/pipeline">datafusion</a>，<a target="_blank" rel="noopener" href="https://github.com/duckdb/duckdb/tree/88b1bfa74d2b79a51ffc4bab18ddeb6a034652f1/src/parallel">DuckDB</a></li>
+</ul>
+<p>感兴趣的读者可以自己阅读这些 pipeline 的实现。</p>
+<p>我自己也简单实现一个的版本来学习 pipeline，并没有实现太多先进的特性，只是出于学习理解的目的实现一个基础的版本：<a target="_blank" rel="noopener" href="https://github.com/Veeupup/naive-pipeline-execution">https://github.com/Veeupup/naive-pipeline-execution</a></p>
+<h1 id="相关资料"><a href="#相关资料" class="headerlink" title="相关资料"></a>相关资料</h1><ul>
+<li><p><a target="_blank" rel="noopener" href="https://www.cidrdb.org/cidr2005/papers/P19.pdf">MonetDB&#x2F;X100: Hyper-Pipelining Query Execution</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2019/papers/14-scheduling/p743-leis.pdf">Morsel-Driven Parallelism: A NUMA-Aware Query Evaluation Framework for the Many-Core Age</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://presentations.clickhouse.com/meetup24/5.%20Clickhouse%20query%20execution%20pipeline%20changes/">ClickHouse Query Execution Pipeline PPT</a></p>
+<ul>
+<li><p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV147411U7A3/?vd_source=2be11642e5a095e9c7f08f3b64cc4b1a">bilibili 搬运对应的演讲</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://github.com/ClickHouse/ClickHouse/issues/34045">Clickhouse CTO Alexey 解释 pipeline</a></p>
+</li>
+</ul>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://bohutang.me/2020/06/11/clickhouse-and-friends-processor/">By 虎哥 ClickHouse和他的朋友们（4）Pipeline处理器和调度器</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/401658490"># ClickHouse 源码学习之Pipeline执行引擎</a> \</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://io-meter.com/2020/01/04/olap-distributed/"><a target="_blank" rel="noopener" href="https://io-meter.com/2020/01/04/olap-distributed/">OLAP 任务的并发执行与调度</a></a></p>
+</li>
+</ul>
 
                 
               </div>
@@ -517,26 +509,26 @@ working stealing 的一个简单优化是 delay scheduling：有的时候并不�
     <div class="license-meta">
       
         <div class="license-meta-item">
-          <div>Author</div>
+          <div>Autor</div>
           <div>tanwei</div>
         </div>
       
       
         <div class="license-meta-item license-meta-date">
-          <div>Posted on</div>
+          <div>Publicado el</div>
           <div>April 30, 2023</div>
         </div>
       
       
       
         <div class="license-meta-item">
-          <div>Licensed under</div>
+          <div>Licencia bajo</div>
           <div>
             
               
               
                 <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
-                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                  <span class="hint--top hint--rounded" aria-label="BY - Atribución">
                     <i class="iconfont icon-by"></i>
                   </span>
                 </a>
@@ -559,7 +551,7 @@ working stealing 的一个简单优化是 delay scheduling：有的时候并不�
                       <a href="/2023/04/30/Photon/" title="Databricks Photon | Native C++ Query Engine for Lakehouse Systems">
                         <i class="iconfont icon-arrowleft"></i>
                         <span class="hidden-mobile">Databricks Photon | Native C++ Query Engine for Lakehouse Systems</span>
-                        <span class="visible-mobile">Previous</span>
+                        <span class="visible-mobile">Anterior</span>
                       </a>
                     
                   </article>
@@ -568,7 +560,7 @@ working stealing 的一个简单优化是 delay scheduling：有的时候并不�
                     
                       <a href="/2023/04/30/Dremel/" title="Dremel | A Decade of Interactive SQL Analysis at Web Scale">
                         <span class="hidden-mobile">Dremel | A Decade of Interactive SQL Analysis at Web Scale</span>
-                        <span class="visible-mobile">Next</span>
+                        <span class="visible-mobile">Siguiente</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
                     
@@ -616,7 +608,7 @@ working stealing 的一个简单优化是 delay scheduling：有的时候并不�
     <div id="toc">
   <p class="toc-header">
     <i class="iconfont icon-list"></i>
-    <span>Table of Contents</span>
+    <span>Tabla de Contenidos</span>
   </p>
   <div class="toc-body" id="toc-body"></div>
 </div>
@@ -672,7 +664,7 @@ working stealing 的一个简单优化是 delay scheduling：有的时候并不�
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <h4 class="modal-title w-100 font-weight-bold">Buscar</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -680,7 +672,7 @@ working stealing 的一个简单优化是 delay scheduling：有的时候并不�
       <div class="modal-body mx-3">
         <div class="md-form mb-5">
           <input type="text" id="local-search-input" class="form-control validate">
-          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+          <label data-error="x" data-success="v" for="local-search-input">Palabra clave</label>
         </div>
         <div class="list-group" id="local-search-result"></div>
       </div>
@@ -863,7 +855,7 @@ working stealing 的一个简单优化是 delay scheduling：有的时候并不�
   
 
   <noscript>
-    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+    <div class="noscript-warning">El blog funciona mejor con JavaScript habilitado</div>
   </noscript>
 </body>
 </html>
