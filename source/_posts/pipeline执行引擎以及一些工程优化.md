@@ -138,11 +138,11 @@ Batch execution:
 
   * 用前面 ck 的图举例，对于一个很长的 pipeline，可以同时执行一条 pipeline 上的多个算子，例如
 
-  * ```
-    source1 -> transform1 -> transform2 -> transform3 -> ...
-    ```
+    `source1 -> transform1 -> transform2 -> transform3 -> ...`
 
-    可以同时执行一条 pipe 上的 source1 算子和 transform2 算子，这就是所谓的竖直方向的并行
+可以同时执行一条 pipe 上的 source1 算子和 transform2 算子，这就是所谓的竖直方向的并行
+
+
 
 ## NUMA-aware (data centric)
 
@@ -163,8 +163,9 @@ pipe2: source2 -> filter -- selectity: 99% ---> transform2 ->
 
 pipe3:  source3 -> filter -- selectity: 50% ---> transform2 -> 
 
-...
 ```
+
+
 
 在这种情况下，pipe1 就可以尝试 steal pipe3 中的 task queue 中的任务来执行，不让每个 CPU 闲置，提高 CPU 的利用率。
 
