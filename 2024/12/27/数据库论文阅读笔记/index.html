@@ -16,21 +16,23 @@
   <meta name="author" content="tanwei">
   <meta name="keywords" content="">
   
-    <meta name="description" content="24年快要过完了，得吃吃思考的苦，想想今年又是怎么虚度的，今年是正式工作的第二年，心态相比去年刚毕业时的紧张的感觉，要缓解了很多。 工作上的感受在工作上，自己独立承担了一些事情，能够端到端做一些事情了，这是好事。当前参与的项目从最开始的草台班子到现在逐渐变得比较成熟，这个过程感觉自己学到了很多，从身边很多很棒的同事身上能学到了不少，这里指的不仅仅是在技术能力上的提升，还有更多学到了做事的方式以及视">
+    <meta name="description" content="今年的一个计划是用 NotebookLLM 来读完 cmu15-721 spring2024 中的标星论文，新工具带来的生产力的提高真是太强了…… 博客里面就不放太多细碎的笔记内容了，这里就放一个最精华的 NotebookLLM 的总结和一些要点了…… Lakehouse: A New Generation of Open Platforms that Unify Data Warehousing">
 <meta property="og:type" content="article">
-<meta property="og:title" content="2024总结">
-<meta property="og:url" content="http://tanweime.com/2024/12/23/2024%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:title" content="数据库论文阅读笔记">
+<meta property="og:url" content="http://tanweime.com/2024/12/27/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/index.html">
 <meta property="og:site_name" content="TanWei&#39;s blog">
-<meta property="og:description" content="24年快要过完了，得吃吃思考的苦，想想今年又是怎么虚度的，今年是正式工作的第二年，心态相比去年刚毕业时的紧张的感觉，要缓解了很多。 工作上的感受在工作上，自己独立承担了一些事情，能够端到端做一些事情了，这是好事。当前参与的项目从最开始的草台班子到现在逐渐变得比较成熟，这个过程感觉自己学到了很多，从身边很多很棒的同事身上能学到了不少，这里指的不仅仅是在技术能力上的提升，还有更多学到了做事的方式以及视">
+<meta property="og:description" content="今年的一个计划是用 NotebookLLM 来读完 cmu15-721 spring2024 中的标星论文，新工具带来的生产力的提高真是太强了…… 博客里面就不放太多细碎的笔记内容了，这里就放一个最精华的 NotebookLLM 的总结和一些要点了…… Lakehouse: A New Generation of Open Platforms that Unify Data Warehousing">
 <meta property="og:locale">
-<meta property="article:published_time" content="2024-12-23T12:43:35.000Z">
-<meta property="article:modified_time" content="2024-12-25T12:59:49.530Z">
+<meta property="og:image" content="http://tanweime.com/evolution_data_platform.png">
+<meta property="article:published_time" content="2024-12-27T03:26:48.000Z">
+<meta property="article:modified_time" content="2024-12-27T03:39:49.049Z">
 <meta property="article:author" content="tanwei">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/evolution_data_platform.png">
   
   
   
-  <title>2024总结 - TanWei&#39;s blog</title>
+  <title>数据库论文阅读笔记 - TanWei&#39;s blog</title>
 
   <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
 
@@ -196,7 +198,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="2024总结"></span>
+            <span id="subtitle" data-typed-text="数据库论文阅读笔记"></span>
           
         </div>
 
@@ -207,8 +209,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-12-23 20:43" pubdate>
-          December 23, 2024 pm
+        <time datetime="2024-12-27 11:26" pubdate>
+          December 27, 2024 am
         </time>
       </span>
     
@@ -220,7 +222,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          1.7k 字
+          477 字
         
       </span>
     
@@ -232,7 +234,7 @@
         
         
           <!-- compatible with older versions-->
-          6 分钟
+          2 分钟
         
       </span>
     
@@ -269,72 +271,39 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">2024总结</h1>
+            <h1 id="seo-header">数据库论文阅读笔记</h1>
             
             
               <div class="markdown-body">
                 
-                <p>24年快要过完了，得吃吃思考的苦，想想今年又是怎么虚度的，今年是正式工作的第二年，心态相比去年刚毕业时的紧张的感觉，要缓解了很多。</p>
-<h1 id="工作上的感受"><a href="#工作上的感受" class="headerlink" title="工作上的感受"></a>工作上的感受</h1><p>在工作上，自己独立承担了一些事情，能够端到端做一些事情了，这是好事。当前参与的项目从最开始的草台班子到现在逐渐变得比较成熟，这个过程感觉自己学到了很多，从身边很多很棒的同事身上能学到了不少，这里指的不仅仅是在技术能力上的提升，还有更多学到了做事的方式以及视野的开阔。</p>
+                <p>今年的一个计划是用 NotebookLLM 来读完 <a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2024/schedule.html">cmu15-721 spring2024</a> 中的标星论文，新工具带来的生产力的提高真是太强了……</p>
+<p>博客里面就不放太多细碎的笔记内容了，这里就放一个最精华的 NotebookLLM 的总结和一些要点了……</p>
+<h2 id="Lakehouse-A-New-Generation-of-Open-Platforms-that-Unify-Data-Warehousing-and-Advanced-Analytics"><a href="#Lakehouse-A-New-Generation-of-Open-Platforms-that-Unify-Data-Warehousing-and-Advanced-Analytics" class="headerlink" title="Lakehouse: A New Generation of Open Platforms that Unify Data Warehousing and Advanced Analytics"></a><a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2024/papers/01-modern/armbrust-cidr21.pdf">Lakehouse: A New Generation of Open Platforms that Unify Data Warehousing and Advanced Analytics</a></h2><p>这篇论文主要讨论了<strong>Lakehouse</strong>架构，这是一种结合了数据湖和数据仓库优势的新型数据平台。Lakehouse 基于<strong>开放的直接访问数据格式</strong> (如 Parquet 和 ORC)，并为<strong>机器学习和数据科学</strong>提供了一流的支持。这种架构通过<strong>元数据层</strong>实现了 ACID 事务和版本控制等数据管理功能，并利用<strong>缓存、索引和数据布局优化</strong>来提高 SQL 性能。此外，Lakehouse 还支持<strong>声明式 DataFrame API</strong>，以加速 ML 工作负载的数据访问。通过这些技术，Lakehouse 旨在解决传统数据湖和数据仓库的局限性，例如数据陈旧、可靠性问题和对高级分析的有限支持。Lakehouse 为企业提供了更<strong>高效、灵活和经济的数据管理解决方案</strong>。</p>
+<p>下面放一张论文中的好图，讲 Data Platform 的演进过程：</p>
 <ul>
-<li>从做好一个扎实的 MVP 开始<ul>
-<li>这是我这两年在当前项目里感受最深的一个点：在做大的方向选型的时候，不要一开始就想做的又大又全，好像每个方面都做到了，但是每个方面都做的好像用不了，这里也是问题，那里也是问题，最后会完完全全变成连优化、重构都无法进行的屎山。</li>
-<li>在做严肃工程时，正确做事方法应该是：先做最小功能的集合，确保这个最小功能的集合，除了在设计本身之外，工程上还需要有较为完备的测试手段（unit test、e2e、fuzz等），用 CI&#x2F;CD 来确保这一点，确保有一定的可观测性，确保有 benchmark 的方式和手段，确保有产品做发布、做运维的 SOP 等。</li>
-<li>做上述这些的目的是确保每一个功能都能高质量的发布，代码不至于太快演化成屎山，也能让你睡更多好觉。之后的不论是在该严肃的工程项目上的演化，都能够尽量稳健的走好每一步，而不至于走两步退三步的情况出现。</li>
-<li>感觉是血泪的教训。。。</li>
+<li>第一阶段： <ul>
+<li>计算和存储耦合</li>
+<li>数据集快速增长，越来越多非结构化数据集无法处理</li>
 </ul>
 </li>
-<li>打破砂锅问到底：搞清楚真实的问题和需求，不一定是最初发现的源头。<ul>
-<li>工作中不免会有一些 adhoc 的需求产生， 这种需求可能是自上而下的，也可能是同级的同事提出的需求。</li>
-<li>最开始我收到这些请求的时候，经常会<strong>直接</strong>从技术上的角度去思考、去回答如何解决，但是面对背后用户真实的需求确完全不了解。举个同事用过的例子：“我能用微波炉烧水吗？”，其实用户也许只是想泡一碗泡面，但是不知道热水器在哪，这种情况下如果直接硬上，就是显得特别滑稽。但如果你深入挖掘一些他人真实的需求，也许你给告诉用户，热水器就在那边，你可以用那边的热水泡面，问题就特别简单的解决了。</li>
-<li>这种方式可以避免非常多 “硬上” 方案的苟合，如果不搞清楚真实需求，“硬上”这种方式不仅仅会让用户感到难受，也会让产品&#x2F;技术提供方感觉到特别别扭。所以往往当你觉得某些事情非常不优雅的时候，也许从一开始的切入点就错了。</li>
-<li>更重要的是，如果某些事情特别难做，或者特别别扭，也许本身就不应该存在，也许这个问题或者需求本身就是一个伪需求。我现在深刻认识到了技术解决问题的局限性，很多事情从其他的方面也许一句话就解决了，但是换成技术“硬上”，就是给自己找罪受。</li>
-</ul>
-</li>
-<li>全面的思考问题，站在其他人的角度思考问题<ul>
-<li>这里不仅仅是指技术问题，也是工作中的各种问题，不过我觉得我现在也做得不是特别好，感觉全面的思考问题更多的是需要从事情中去学习。</li>
-<li>我觉得这里更多的是经验层面上的，很多事情遇到过了，了解过事情可能发生的各种可能性，下次遇到类似的问题你才会多一个角度去思考。</li>
-<li>这点需要不断的学习和反思，不论哪次如果发生意料之外的事情或者发现一些没料想过的新事物，那就是一些新的视角的产生，都能帮助我更好的去思考下一个问题。</li>
-</ul>
-</li>
-<li>公开&#x2F;高效&#x2F;全面的沟通<ul>
-<li>工作里不可能每个人都有完善的信息，一定要尽可能做好上下文的共享，<strong>尽可能采用公开的形式来讨论问题和交流方案</strong>，可以非常大程度降低沟通的复杂度，降低所有人做决策的难度。</li>
+<li>第二阶段：<ul>
+<li>将所有原始数据offload到数据湖</li>
+<li>使用开放文件格式（Parquet, ORC 等）</li>
+<li>schema-on-read</li>
+<li>数据质量和治理的问题被推到了下游</li>
+<li>仍然有数据湖中的一小部分数据稍后会被 ETL 到下游数据仓库中，用于最重要的决策支持和 BI 应用</li>
+<li>云数据湖：S3 开始取代 HDFS，持久性高，跨地域复制，成本极低</li>
+<li>当前的四个问题：<ul>
+<li>可靠性</li>
+<li>数据过时</li>
+<li>对高级分析的支持有限</li>
+<li>总体拥有成本</li>
 </ul>
 </li>
 </ul>
-<h1 id="收获的好的习惯"><a href="#收获的好的习惯" class="headerlink" title="收获的好的习惯"></a>收获的好的习惯</h1><p>今年稍微拨乱反正，重新开始找回了一些好的习惯。</p>
-<ul>
-<li><p>健身</p>
-<ul>
-<li>今年年初的时候自己已经胖到了一百七十多斤了，一拍照发现自己已经胖成球了，于是开始减肥、健身。</li>
-<li>现在自己回到了一百五十多斤，现在基本上一周四练能够保证，身材也重新开始回来了一些，但是距离健康和自己想要的目标还是有一些距离，明年要继续努力。</li>
-</ul>
-</li>
-<li><p>阅读</p>
-<ul>
-<li>依稀记得23年刚毕业自己完全放飞自我了… 今年开始又开始看了一些书，参见 <a href="https://tanweime.com/2024/12/14/2024%E5%B9%B4%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/">2024阅读笔记</a>，现在看书的功利性没有那么强了，不像在学校找工作的时候只看技术书 🤡</li>
-</ul>
-</li>
-<li><p>记账</p>
-<ul>
-<li>其实从毕业开始就开始记账了，今年找到了更好更适合自己的方法，发现自己的消费太多了… 还是得制定预算系统，花钱如流水啊，沪币也确实名副其实……</li>
-</ul>
-</li>
-<li><p>PARA 做笔记</p>
-<ul>
-<li>找到了更好的做笔记方法，这个真值得单独拿出来说，目前自己已经完全迁移到该方法上了</li>
-</ul>
 </li>
 </ul>
-<h1 id="生活"><a href="#生活" class="headerlink" title="生活"></a>生活</h1><p>今年年尾的时候又开始听B哥，陶喆和李宗盛，因为发生了一些意料之外的事情，心态发生了一些变化吧。</p>
-<p>如果说今年在生活中学到的几件事，那就是：</p>
-<ul>
-<li>逃避问题不会解决任何问题，必须勇敢的面对。</li>
-<li>需要坦诚的面对自己，面对自己的内心，不要欺骗自己，不要活在自己的幻想中。</li>
-<li>要能够有允许一切事情发生的勇气（勇气，被讨厌的勇气里提到最多的也就是勇气）。</li>
-</ul>
-<hr>
-<p>不论怎么说，每一年都是我最好的一年，希望明年能更好！</p>
+<p><img src="/evolution_data_platform.png" srcset="/img/loading.gif" lazyload alt="数据平台的演进"></p>
 
                 
               </div>
@@ -342,27 +311,6 @@
             <hr/>
             <div>
               <div class="post-metas my-3">
-  
-    <div class="post-meta mr-3 d-flex align-items-center">
-      <i class="iconfont icon-category"></i>
-      
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/" class="category-chain-item">年度总结</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-    </div>
   
   
 </div>
@@ -373,8 +321,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>2024总结</div>
-      <div>http://tanweime.com/2024/12/23/2024总结/</div>
+      <div>数据库论文阅读笔记</div>
+      <div>http://tanweime.com/2024/12/27/数据库论文阅读笔记/</div>
     </div>
     <div class="license-meta">
       
@@ -386,7 +334,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>Publicado el</div>
-          <div>December 23, 2024</div>
+          <div>December 27, 2024</div>
         </div>
       
       
@@ -418,18 +366,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2024/12/27/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/" title="数据库论文阅读笔记">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">数据库论文阅读笔记</span>
-                        <span class="visible-mobile">Anterior</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2024/12/14/2024%E5%B9%B4%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/" title="2024年阅读笔记">
-                        <span class="hidden-mobile">2024年阅读笔记</span>
+                      <a href="/2024/12/23/2024%E6%80%BB%E7%BB%93/" title="2024总结">
+                        <span class="hidden-mobile">2024总结</span>
                         <span class="visible-mobile">Siguiente</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -452,7 +394,7 @@
         var options = Object.assign(
           {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
           {
-            id: 'd89e6bbea90d7d3529fc0d663aea144a'
+            id: '18a9ae3a81121a2984d8c10f6ea3335f'
           }
         )
         var gitalk = new Gitalk(options);
