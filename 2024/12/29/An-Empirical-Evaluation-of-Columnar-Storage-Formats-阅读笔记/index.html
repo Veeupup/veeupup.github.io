@@ -1,0 +1,732 @@
+
+
+<!DOCTYPE html>
+<html lang="zh" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="tanwei">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="这篇论文主要对比介绍了 Parquet 和 ORC 两种列存存储格式，通过一个基于真实世界数据集的基准测试，评估了它们的性能和空间效率。 列存格式的演进 早期大数据生态系统中的文件格式：2010 年代初期，大数据生态系统催生了多种开源文件格式。Apache Hadoop 最先引入了两种面向行的格式：SequenceFile，以键值对的形式组织；以及基于 JSON 的 Avro。 列式数据库系统的兴">
+<meta property="og:type" content="article">
+<meta property="og:title" content="An Empirical Evaluation of Columnar Storage Formats - 阅读笔记">
+<meta property="og:url" content="http://tanweime.com/2024/12/29/An-Empirical-Evaluation-of-Columnar-Storage-Formats-%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="TanWei&#39;s blog">
+<meta property="og:description" content="这篇论文主要对比介绍了 Parquet 和 ORC 两种列存存储格式，通过一个基于真实世界数据集的基准测试，评估了它们的性能和空间效率。 列存格式的演进 早期大数据生态系统中的文件格式：2010 年代初期，大数据生态系统催生了多种开源文件格式。Apache Hadoop 最先引入了两种面向行的格式：SequenceFile，以键值对的形式组织；以及基于 JSON 的 Avro。 列式数据库系统的兴">
+<meta property="og:locale">
+<meta property="og:image" content="http://tanweime.com/parquet-orc-layout.png">
+<meta property="article:published_time" content="2024-12-29T10:46:15.000Z">
+<meta property="article:modified_time" content="2024-12-29T10:57:34.851Z">
+<meta property="article:author" content="tanwei">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://tanweime.com/parquet-orc-layout.png">
+  
+  
+  
+  <title>An Empirical Evaluation of Columnar Storage Formats - 阅读笔记 - TanWei&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"tanweime.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>谭巍的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于我</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="An Empirical Evaluation of Columnar Storage Formats - 阅读笔记"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-12-29 18:46" pubdate>
+          December 29, 2024 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          3.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          11 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">An Empirical Evaluation of Columnar Storage Formats - 阅读笔记</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>这篇论文主要对比介绍了 Parquet 和 ORC 两种列存存储格式，通过一个基于真实世界数据集的基准测试，评估了它们的性能和空间效率。</p>
+<h1 id="列存格式的演进"><a href="#列存格式的演进" class="headerlink" title="列存格式的演进"></a>列存格式的演进</h1><ul>
+<li><strong>早期大数据生态系统中的文件格式</strong>：2010 年代初期，大数据生态系统催生了多种开源文件格式。Apache Hadoop 最先引入了两种面向行的格式：<strong>SequenceFile</strong>，以键值对的形式组织；以及基于 JSON 的 <strong>Avro</strong>。</li>
+<li><strong>列式数据库系统的兴起</strong>：与此同时，<strong>C-Store</strong>、<strong>MonetDB</strong> 和 <strong>VectorWise</strong> 等面向列的数据库管理系统（DBMS）开发了高效分析查询处理的基础方法，包括列式压缩、矢量化处理和延迟物化。</li>
+<li><strong>Hadoop 社区采纳列式存储思想</strong>：Hadoop 社区随后从列式系统中借鉴了这些思想，并开发了更高效的格式。</li>
+<li><strong>RCFile 的发布</strong>：2011 年，Facebook&#x2F;Meta 发布了用于 Hadoop 的面向列的格式 <strong>RCFile</strong>。</li>
+<li><strong>ORC 格式的出现</strong>：两年后，Meta 对 RCFile 进行了改进，并发布了基于 PAX（Partition Attribute Across）模型的 <strong>ORC</strong>（Optimized Record Columnar File）格式。</li>
+<li><strong>Parquet 格式的出现</strong>：在 ORC 发布一个月后，Twitter 和 Cloudera 发布了第一个版本的 <strong>Parquet</strong>。Parquet 借鉴了早期列式存储研究的见解，例如 PAX 模型以及 Google Dremel 的记录切分和组装算法。</li>
+<li><strong>Parquet 和 ORC 的发展现状</strong>：此后，Parquet 和 ORC 都成为 Apache 基金会的顶级项目。它们也得到了大多数数据处理平台的支持，包括 Hive、Presto&#x2F;Trino 和 Spark。即使是具有专有存储格式的数据库产品（例如 Redshift、Snowflake、ClickHouse 和 BigQuery）也通过外部表支持 Parquet 和 ORC。</li>
+<li><strong>其他开源列式格式</strong>：华为的 <strong>CarbonData</strong> 是另一种开源列式格式，它提供了内置的倒排索引和列组。但由于其与 Spark 的关系更为密切，之前的研究未能独立评估该格式。最近的研究表明，与 Parquet 和 ORC 相比，CarbonData 的性能较差，并且社区活跃度较低。</li>
+<li><strong>专有列式格式</strong>：许多大型公司在过去十年中开发了自己的专有列式格式。Google 的 <strong>Capacitor</strong> 格式被其许多系统使用，包括 BigQuery 和 Napa。它基于 Dremel 和 Abadi 等人 的技术，这些技术根据工作负载行为优化布局。YouTube 在 2019 年为 Procella DBMS 开发了 <strong>Artus</strong> 格式，该格式支持自适应编码，无需块压缩，并针对嵌套模式的查找时间进行了优化。Meta 的 <strong>DWRF</strong> 是 ORC 的变体，可更好地支持读取和加密嵌套数据。Meta 最近开发了 <strong>Alpha</strong>，以改善机器学习（ML）应用程序的训练工作负载。</li>
+<li><strong>Arrow 格式</strong>：<strong>Arrow</strong> 是一种内存中的列式格式，旨在实现不同应用程序进程之间或库 API 边界之间的高效数据交换，且序列化程度有限或没有序列化。与 Parquet 或 ORC 不同，Arrow 支持随机访问，因此在读取时不需要基于块的解码。由于 Arrow 不适用于长期磁盘存储，因此本文不对其进行评估。</li>
+<li><strong>Lakehouse 趋势</strong>：最近的 lakehouse 趋势导致了格式的扩展，以支持更好的元数据管理（例如，ACID 事务）。代表性项目包括 Delta Lake、Apache Iceberg 和 Apache Hudi。它们添加了一个辅助元数据层，并且不直接修改底层的列式文件格式。</li>
+<li><strong>科学数据存储格式</strong>：还有用于 HPC 工作负载的科学数据存储格式，包括 <strong>HDF5</strong>、<strong>BP5</strong>、<strong>NetCDF</strong> 和 <strong>Zarr</strong>。它们的目标是具有复杂文件结构、类型和组织的异构数据。它们的数据通常是多维数组，不支持按列编码。尽管它们公开了多个语言 API，但由于缺乏列式存储功能，很少有 DBMS 支持这些格式。</li>
+</ul>
+<h1 id="Parquet-和-ORC-的核心特性比较"><a href="#Parquet-和-ORC-的核心特性比较" class="headerlink" title="Parquet 和 ORC 的核心特性比较"></a>Parquet 和 ORC 的核心特性比较</h1><p>这里主要介绍了列式存储格式（如 Parquet 和 ORC）的<strong>核心功能</strong>，并详细对比了这两种格式在不同功能上的设计差异。该部分内容旨在<strong>建立一个用于理解和比较列式存储格式的框架</strong>，为后续的性能评估和未来格式的设计提供基础。</p>
+<p><img src="/parquet-orc-layout.png" srcset="/img/loading.gif" lazyload alt="parquet orc layout"></p>
+<ul>
+<li><strong>内部布局（Internal Layout）</strong><ul>
+<li><strong>PAX 格式</strong>：Parquet 和 ORC 都采用 <strong>PAX（Partition Attribute Across）</strong> 格式。这种格式首先将表水平划分为行组（Row Group），然后在每个行组内按列存储数据，每个属性形成一个列块（Column Chunk）。这种混合列式布局使得 DBMS 可以使用<strong>矢量化查询处理</strong>，并减轻行组中元组重建的开销。</li>
+<li><strong>逻辑块到物理存储的映射</strong>：虽然 Parquet 和 ORC 的布局相似，但它们在逻辑块到物理存储的映射方式上有所不同。Parquet 使用基于<strong>行数</strong>的行组大小（例如 100 万行），而 ORC 使用固定的<strong>物理存储大小</strong>（例如 64MB）。Parquet 试图保证一个行组内有足够的条目来利用矢量化查询处理，但它可能导致较大的内存占用，尤其是在宽表的情况下。另一方面，ORC 限制了行组的物理大小以更好地控制内存使用，但它可能导致具有大属性的条目不足。</li>
+<li><strong>压缩单元</strong>：Parquet 将其压缩单元映射到最小的区域映射（smallest zone map）。ORC 在调整块压缩算法的性能空间权衡方面提供了灵活性。但是，最小的区域映射和压缩单元之间的不对齐会在查询处理期间增加额外的复杂性。</li>
+</ul>
+</li>
+<li><strong>编码变体（Encoding Variants）</strong><ul>
+<li><strong>轻量级压缩方案</strong>：Parquet 和 ORC 都支持标准的 OLAP 压缩技术，例如字典编码（Dictionary Encoding）、游程编码（Run-Length Encoding，RLE）和位打包（Bitpacking）。</li>
+<li><strong>字典编码</strong>：<strong>Parquet 默认对每个列应用字典编码</strong>，无论数据类型如何，而 <strong>ORC 仅将其用于字符串</strong>。它们都在字典代码上应用另一层整数编码。Parquet 为每个列块的字典大小设置了一个限制（默认情况下为 1MB），当字典已满时，后续值将回退到“plain”（即，无编码）。另一方面，<strong>ORC 计算列的 NDV 比率（即，NDV&#x2F;行数）以确定是否对其应用字典编码</strong>。如果列的 NDV 比率大于预定义的阈值（例如，0.8），则 ORC 将禁用编码。</li>
+<li><strong>整数编码</strong>：对于整数列，Parquet 首先进行字典编码，然后对字典代码应用 RLE 和位打包的混合。如果相同的值连续重复 ≥ 8 次，则使用 RLE；否则，使用位打包。<strong>ORC 的整数编码器使用基于规则的贪婪算法为每个值子序列选择最佳方案</strong>。ORC 的整数编码方案包括 RLE、Delta 编码、位打包和 PFOR 的变体。ORC 的整数编码算法比 Parquet 的更复杂，能够抓住更多的压缩机会，但是<strong>在四种编码方案之间切换会减慢解码过程</strong>。</li>
+</ul>
+</li>
+<li><strong>压缩（Compression）</strong><ul>
+<li><strong>块压缩</strong>：Parquet 和 ORC 默认都启用块压缩。每个格式支持的算法在表1中列出。块压缩算法与类型无关，它将任何数据视为字节流。大多数块压缩算法包含用于配置“压缩级别”的参数，以在压缩率和压缩&#x2F;解压缩速度之间进行权衡。</li>
+<li><strong>Parquet 直接向用户公开这些调整旋钮，而 ORC 为每个算法提供了两个预配置的选项，“针对速度优化”和“针对压缩优化”</strong>。</li>
+</ul>
+</li>
+<li><strong>类型系统（Type System）</strong><ul>
+<li><strong>Parquet 的类型系统</strong>：Parquet 提供了一组最小的原始类型（例如，INT32、FLOAT、BYTE_ARRAY）。Parquet 中所有其他支持的类型（例如，INT8、日期、时间戳）都是使用这些原始类型实现的。</li>
+<li><strong>ORC 的类型系统</strong>：ORC 中的每个类型都有一个单独的实现，具有专用的读取器和写入器。尽管这可以带来更多特定于类型的优化，但会使实现变得臃肿。</li>
+<li><strong>复杂类型</strong>：Parquet 和 ORC 都支持 Struct、List 和 Map，但 Parquet 不像 ORC 那样提供 Union 类型。</li>
+</ul>
+</li>
+<li><strong>区域映射&#x2F;索引（Zone Map &#x2F; Index）</strong><ul>
+<li><strong>区域映射</strong>：Parquet 和 ORC 都包含区域映射和可选的布隆过滤器以启用选择修剪。区域映射包含文件中预定义范围内最小值、最大值和行数。如果区域的值范围不满足谓词，则可以在表扫描期间跳过整个区域。Parquet 和 ORC 都在文件级别和行组级别包含区域映射。</li>
+<li><strong>最小区域映射粒度</strong>：Parquet 中最小区域映射粒度是物理页（即压缩单元），而 ORC 中是表示行数的可配置值（默认情况下为 10000 行）。是否构建最小区域映射在 Parquet 中是可选的。</li>
+<li><strong>Parquet 的 PageIndex</strong>：在 Parquet 的早期版本中，最小的区域映射存储在页面标头中，这导致了大量的随机 I&#x2F;O。在 Parquet 的最新版本（2.9.0）中，通过一个名为 PageIndex 的可选组件解决了这个问题，该组件存储在文件页脚之前，以保存所有最小的区域映射。ORC 将其最小的区域映射存储在每个行组的开头。</li>
+<li><strong>Bloom Filter</strong>：Bloom Filter 在 Parquet 和 ORC 中都是可选的。ORC 中的 Bloom Filter 与最小的区域映射具有相同的粒度，并且它们彼此位于同一位置。但是，Parquet 中的 Bloom Filter 仅在列块级别创建，部分原因是 Parquet 中的 PageIndex（即，最小的区域映射）是可选的。</li>
+</ul>
+</li>
+<li><strong>嵌套数据模型（Nested Data Model）</strong><ul>
+<li><strong>Parquet 的 Dremel 模型</strong>：Parquet 中的嵌套数据模型基于 Dremel。Parquet 将每个原子字段的值（图 3a 中分层模式中的叶节点）存储为单独的列。每个列都与两个相同长度的整数序列相关联，称为重复级别（R）和定义级别（D），以编码结构。R 将值链接到它们对应的“重复字段”，而 D 跟踪“非必需字段”中的 NULL。</li>
+<li><strong>ORC 的长度和存在模型</strong>：另一方面，ORC 采用基于长度和存在的更直观的模型来编码嵌套数据。ORC 将一个布尔列与每个可选字段相关联，以指示值的存在。对于每个重复字段，ORC 包括一个额外的整数列来记录重复长度。</li>
+</ul>
+</li>
+</ul>
+<h1 id="Lessions-Learned"><a href="#Lessions-Learned" class="headerlink" title="Lessions Learned"></a>Lessions Learned</h1><p>实验评估部分总结的经验教训和未来方向，为下一代列式存储格式的设计提供了重要的指导，主要包括以下几点：</p>
+<ul>
+<li><strong>字典编码（Dictionary Encoding）</strong>：<strong>字典编码对于各种数据类型（甚至是浮点数值）都非常有效</strong>，因为大多数真实世界的数据都具有较低的 NDV（不同值的数量）比率。 未来格式应继续积极应用此技术，如 Parquet 所做的那样。</li>
+<li><strong>编码方案的简洁性</strong>：<strong>列式格式的编码方案保持简单至关重要</strong>，以确保具有竞争力的解码性能。未来的格式设计者应注意解码过程中从多个编解码算法中进行选择的性能成本。</li>
+<li><strong>减少块压缩和重量级编码的使用</strong>：在现代硬件上，<strong>查询处理的瓶颈正在从存储转移到（CPU）计算</strong>。除非在特定情况下证明有好处，否则未来格式应限制使用块压缩和其他重量级编码。</li>
+<li><strong>元数据布局的集中化和随机访问优化</strong>：未来格式中的<strong>元数据布局应集中化</strong>，并且对随机访问友好，以更好地支持 ML 训练中常见的宽（特征）表。基本 I&#x2F;O 块的大小应针对高延迟云存储进行优化。</li>
+<li><strong>索引和过滤结构的增强</strong>：随着存储成本的降低，未来格式可以<strong>存储更复杂的索引和过滤结构</strong>，以加快查询处理速度。</li>
+<li><strong>嵌套数据模型与内存格式的亲和性</strong>：嵌套数据模型的设计应与现代内存格式具有亲和性，以减少转换开销。</li>
+<li><strong>支持机器学习工作负载</strong>：常见机器学习工作负载的特性要求未来格式有效地支持<strong>宽表投影和低选择性选择</strong>。 这需要更好的元数据组织和更有效的索引。此外，未来格式应为大型二进制对象分配单独的区域，并采用专门为浮点数设计的压缩技术。</li>
+<li><strong>GPU 解码效率</strong>：未来的格式应考虑使用 GPU 的解码效率。 这不仅需要在文件级别有足够的并行数据块，还需要<strong>编码算法可以并行化</strong>，以充分利用 GPU 线程块内的计算。</li>
+</ul>
+<p>这些经验教训表明，未来的列式存储格式需要<strong>更加注重解码性能、元数据管理、索引和过滤机制，以及对现代硬件和机器学习工作负载的支持</strong>。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" class="category-chain-item">论文笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>An Empirical Evaluation of Columnar Storage Formats - 阅读笔记</div>
+      <div>http://tanweime.com/2024/12/29/An-Empirical-Evaluation-of-Columnar-Storage-Formats-阅读笔记/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Beitragsautor</div>
+          <div>tanwei</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Veröffentlicht am</div>
+          <div>December 29, 2024</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Urheberrechtshinweis</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/12/29/2025%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/" title="2025阅读笔记">
+                        <span class="hidden-mobile">2025阅读笔记</span>
+                        <span class="visible-mobile">Nächster</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', function() {
+        var options = Object.assign(
+          {"clientID":"5934d27e154ce9ec8f87","clientSecret":"876c66d607e5e975aefc217caec9875478ebfa07","repo":"veeupup.github.io","owner":"veeupup","admin":["veeupup"],"language":"zh-CN","labels":["Gitalk"],"perPage":10,"pagerDirection":"last","distractionFreeMode":false,"createIssueManually":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token"},
+          {
+            id: '66e63ebb9679163fcebb538b7b0db086'
+          }
+        )
+        var gitalk = new Gitalk(options);
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Inhaltsverzeichnis</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Suchen</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Stichwort</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/replace_img_path.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog funktioniert am besten mit aktiviertem JavaScript</div>
+  </noscript>
+</body>
+</html>
