@@ -16,16 +16,16 @@
   <meta name="author" content="tanwei">
   <meta name="keywords" content="">
   
-    <meta name="description" content="这篇论文主要对比介绍了 Parquet 和 ORC 两种列存存储格式，通过一个基于真实世界数据集的基准测试，评估了它们的性能和空间效率。 列存格式的演进 早期大数据生态系统中的文件格式：2010 年代初期，大数据生态系统催生了多种开源文件格式。Apache Hadoop 最先引入了两种面向行的格式：SequenceFile，以键值对的形式组织；以及基于 JSON 的 Avro。 列式数据库系统的兴">
+    <meta name="description" content="An Empirical Evaluation of Columnar Storage Formats 主要对比介绍了 Parquet 和 ORC 两种列存存储格式，通过一个基于真实世界数据集的基准测试，评估了它们的性能和空间效率。 列存格式的演进 早期大数据生态系统中的文件格式：2010 年代初期，大数据生态系统催生了多种开源文件格式。Apache Hadoop 最先引入了两种面向行的格式：Se">
 <meta property="og:type" content="article">
 <meta property="og:title" content="An Empirical Evaluation of Columnar Storage Formats - 阅读笔记">
 <meta property="og:url" content="http://tanweime.com/2024/12/29/An-Empirical-Evaluation-of-Columnar-Storage-Formats-%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/index.html">
 <meta property="og:site_name" content="TanWei&#39;s blog">
-<meta property="og:description" content="这篇论文主要对比介绍了 Parquet 和 ORC 两种列存存储格式，通过一个基于真实世界数据集的基准测试，评估了它们的性能和空间效率。 列存格式的演进 早期大数据生态系统中的文件格式：2010 年代初期，大数据生态系统催生了多种开源文件格式。Apache Hadoop 最先引入了两种面向行的格式：SequenceFile，以键值对的形式组织；以及基于 JSON 的 Avro。 列式数据库系统的兴">
+<meta property="og:description" content="An Empirical Evaluation of Columnar Storage Formats 主要对比介绍了 Parquet 和 ORC 两种列存存储格式，通过一个基于真实世界数据集的基准测试，评估了它们的性能和空间效率。 列存格式的演进 早期大数据生态系统中的文件格式：2010 年代初期，大数据生态系统催生了多种开源文件格式。Apache Hadoop 最先引入了两种面向行的格式：Se">
 <meta property="og:locale">
 <meta property="og:image" content="http://tanweime.com/parquet-orc-layout.png">
 <meta property="article:published_time" content="2024-12-29T10:46:15.000Z">
-<meta property="article:modified_time" content="2024-12-29T10:57:34.851Z">
+<meta property="article:modified_time" content="2024-12-29T11:00:03.790Z">
 <meta property="article:author" content="tanwei">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://tanweime.com/parquet-orc-layout.png">
@@ -276,7 +276,7 @@
             
               <div class="markdown-body">
                 
-                <p>这篇论文主要对比介绍了 Parquet 和 ORC 两种列存存储格式，通过一个基于真实世界数据集的基准测试，评估了它们的性能和空间效率。</p>
+                <p><a target="_blank" rel="noopener" href="https://15721.courses.cs.cmu.edu/spring2024/papers/02-data1/p148-zeng.pdf">An Empirical Evaluation of Columnar Storage Formats</a> 主要对比介绍了 Parquet 和 ORC 两种列存存储格式，通过一个基于真实世界数据集的基准测试，评估了它们的性能和空间效率。</p>
 <h1 id="列存格式的演进"><a href="#列存格式的演进" class="headerlink" title="列存格式的演进"></a>列存格式的演进</h1><ul>
 <li><strong>早期大数据生态系统中的文件格式</strong>：2010 年代初期，大数据生态系统催生了多种开源文件格式。Apache Hadoop 最先引入了两种面向行的格式：<strong>SequenceFile</strong>，以键值对的形式组织；以及基于 JSON 的 <strong>Avro</strong>。</li>
 <li><strong>列式数据库系统的兴起</strong>：与此同时，<strong>C-Store</strong>、<strong>MonetDB</strong> 和 <strong>VectorWise</strong> 等面向列的数据库管理系统（DBMS）开发了高效分析查询处理的基础方法，包括列式压缩、矢量化处理和延迟物化。</li>
@@ -334,7 +334,7 @@
 <ul>
 <li><strong>字典编码（Dictionary Encoding）</strong>：<strong>字典编码对于各种数据类型（甚至是浮点数值）都非常有效</strong>，因为大多数真实世界的数据都具有较低的 NDV（不同值的数量）比率。 未来格式应继续积极应用此技术，如 Parquet 所做的那样。</li>
 <li><strong>编码方案的简洁性</strong>：<strong>列式格式的编码方案保持简单至关重要</strong>，以确保具有竞争力的解码性能。未来的格式设计者应注意解码过程中从多个编解码算法中进行选择的性能成本。</li>
-<li><strong>减少块压缩和重量级编码的使用</strong>：在现代硬件上，<strong>查询处理的瓶颈正在从存储转移到（CPU）计算</strong>。除非在特定情况下证明有好处，否则未来格式应限制使用块压缩和其他重量级编码。</li>
+<li><strong>减少块压缩和重量级编码的使用</strong>：在现代硬件上，<strong>查询处理的瓶颈正在从存储 I&#x2F;O 转移到计算 CPU</strong>。除非在特定情况下证明有好处，否则未来格式应限制使用块压缩和其他重量级编码。</li>
 <li><strong>元数据布局的集中化和随机访问优化</strong>：未来格式中的<strong>元数据布局应集中化</strong>，并且对随机访问友好，以更好地支持 ML 训练中常见的宽（特征）表。基本 I&#x2F;O 块的大小应针对高延迟云存储进行优化。</li>
 <li><strong>索引和过滤结构的增强</strong>：随着存储成本的降低，未来格式可以<strong>存储更复杂的索引和过滤结构</strong>，以加快查询处理速度。</li>
 <li><strong>嵌套数据模型与内存格式的亲和性</strong>：嵌套数据模型的设计应与现代内存格式具有亲和性，以减少转换开销。</li>
@@ -386,20 +386,20 @@
     <div class="license-meta">
       
         <div class="license-meta-item">
-          <div>Beitragsautor</div>
+          <div>Aŭtoro</div>
           <div>tanwei</div>
         </div>
       
       
         <div class="license-meta-item license-meta-date">
-          <div>Veröffentlicht am</div>
+          <div>Postigita</div>
           <div>December 29, 2024</div>
         </div>
       
       
       
         <div class="license-meta-item">
-          <div>Urheberrechtshinweis</div>
+          <div>Lizenta</div>
           <div>
             
               
@@ -431,7 +431,7 @@
                     
                       <a href="/2024/12/29/2025%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/" title="2025阅读笔记">
                         <span class="hidden-mobile">2025阅读笔记</span>
-                        <span class="visible-mobile">Nächster</span>
+                        <span class="visible-mobile">Sekva afiŝo</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
                     
@@ -479,7 +479,7 @@
     <div id="toc">
   <p class="toc-header">
     <i class="iconfont icon-list"></i>
-    <span>Inhaltsverzeichnis</span>
+    <span>Enhavtabelo</span>
   </p>
   <div class="toc-body" id="toc-body"></div>
 </div>
@@ -535,7 +535,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">Suchen</h4>
+        <h4 class="modal-title w-100 font-weight-bold">Serĉi</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -543,7 +543,7 @@
       <div class="modal-body mx-3">
         <div class="md-form mb-5">
           <input type="text" id="local-search-input" class="form-control validate">
-          <label data-error="x" data-success="v" for="local-search-input">Stichwort</label>
+          <label data-error="x" data-success="v" for="local-search-input">ŝlosivorto</label>
         </div>
         <div class="list-group" id="local-search-result"></div>
       </div>
@@ -726,7 +726,7 @@
   
 
   <noscript>
-    <div class="noscript-warning">Blog funktioniert am besten mit aktiviertem JavaScript</div>
+    <div class="noscript-warning">Blogo funkcias plej bone kun JavaScript ebligita</div>
   </noscript>
 </body>
 </html>
